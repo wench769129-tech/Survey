@@ -37,6 +37,7 @@ button{cursor:pointer}
 [hidden]{display:none!important}
 
 #map{position:fixed;inset:0;z-index:0;background:#cfd6d1}
+#map.nobase{background:var(--bg)}
 .leaflet-control-attribution{background:color-mix(in srgb,var(--surface) 82%,transparent)!important;color:var(--muted)!important;font-size:10px}
 .leaflet-control-attribution a{color:inherit!important}
 
@@ -68,7 +69,7 @@ button{cursor:pointer}
 .dot.ok{background:#2fb344}.dot.bad{background:var(--danger)}.dot.wait{background:#f0a400}
 .chip{min-height:40px;max-width:44vw;padding:0 12px;border-radius:9px;border:1px solid var(--line);background:var(--bg);font-size:14px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:none}
 .seg{align-self:flex-start;display:flex;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:3px;box-shadow:0 2px 10px rgba(0,0,0,.18)}
-.seg button{min-height:36px;padding:0 14px;border:0;border-radius:7px;background:none;font-size:14px;font-weight:500;color:var(--muted)}
+.seg button{min-height:36px;padding:0 10px;border:0;border-radius:7px;background:none;font-size:14px;font-weight:500;color:var(--muted)}
 .seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-fg)}
 
 /* map layer toggles */
@@ -76,6 +77,7 @@ button{cursor:pointer}
 .tg{min-height:44px;padding:0 12px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--muted);font-size:14px;font-weight:500;box-shadow:0 2px 10px rgba(0,0,0,.18)}
 .tg[aria-pressed="true"]{color:var(--accent);border-color:var(--accent);font-weight:700}
 .tg[aria-pressed="true"]::before{content:"✓ "}
+@media(max-width:430px){.mapbar{gap:6px}.tg{padding:0 8px;font-size:13px}.tg[aria-pressed="true"]::before{content:"✓"}}
 .leaflet-tooltip.dist-tip{background:var(--surface);color:var(--fg);border:1px solid #2563eb;border-radius:6px;box-shadow:none;font:700 12px var(--mono);padding:1px 6px}
 .leaflet-tooltip.dist-tip::before{display:none}
 .leaflet-popup-content-wrapper,.leaflet-popup-tip{background:var(--surface);color:var(--fg)}
@@ -106,6 +108,9 @@ textarea.in{min-height:64px;padding:10px 12px;resize:vertical}
 .mono small{color:var(--muted);font-family:var(--font);font-size:12px}
 .label{font-size:12px;color:var(--muted);letter-spacing:.06em;margin-bottom:4px;display:block}
 .btn.nav{display:inline-flex;align-items:center;justify-content:center;text-decoration:none;color:var(--fg)}
+.cgrid{display:flex;flex-wrap:wrap;gap:10px}
+.cbtn{width:44px;height:44px;border-radius:50%;border:3px solid var(--line);padding:0;flex:none}
+.cbtn[aria-pressed="true"]{border-color:var(--fg);box-shadow:0 0 0 2px var(--surface) inset}
 .btns{display:flex;gap:10px;flex-wrap:wrap}
 .btn{flex:1;min-width:120px;min-height:48px;border-radius:12px;border:1px solid var(--line);background:var(--bg);font-weight:700;font-size:15px}
 .btn.pri{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
@@ -126,7 +131,10 @@ textarea.in{min-height:64px;padding:10px 12px;resize:vertical}
 .list button.rm{min-height:36px;padding:0 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);font-size:13px;color:var(--danger)}
 .list button.go{flex:1;min-width:0;display:flex;align-items:center;gap:10px;min-height:44px;border:0;background:none;text-align:left;padding:0}
 .empty{padding:14px;color:var(--muted);font-size:14px}
-.swatch{display:inline-block;width:18px;height:3px;background:var(--sight);vertical-align:middle;margin-right:6px;border-radius:2px}
+.prow{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+.ok2{color:var(--ok);font-size:14px;font-weight:600}
+.bad2{color:var(--danger);font-size:14px;font-weight:600;line-height:1.6}
+.swatch{display:inline-block;width:18px;height:3px;background:var(--linec,#1d6fe0);vertical-align:middle;margin-right:6px;border-radius:2px}
 .card2{border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--bg);display:flex;flex-direction:column;gap:8px}
 .seg2{display:flex;gap:6px}
 .seg2 button{flex:1;min-height:44px;border-radius:10px;border:1px solid var(--line);background:var(--bg);font-weight:700;font-size:15px}
@@ -167,8 +175,9 @@ ol.steps{margin:0;padding-left:20px;line-height:1.8;font-size:14px}
   </div>
   <div class="mapbar">
     <div class="seg" role="group" aria-label="底圖">
-      <button type="button" data-b="emap" aria-pressed="true">電子地圖</button>
-      <button type="button" data-b="photo" aria-pressed="false">正射影像</button>
+      <button type="button" data-b="emap" aria-pressed="true">電子</button>
+      <button type="button" data-b="photo" aria-pressed="false">正射</button>
+      <button type="button" data-b="none" aria-pressed="false">無底圖</button>
     </div>
     <button class="tg" type="button" data-ly="sect" aria-pressed="true">段籍圖</button>
     <button class="tg" type="button" data-ly="cad" aria-pressed="true">地籍圖</button>
@@ -178,6 +187,7 @@ ol.steps{margin:0;padding-left:20px;line-height:1.8;font-size:14px}
 <div class="fabs">
   <button class="round" id="layBtn" aria-label="圖層與資料"><svg viewBox="0 0 24 24"><path d="M12 3 3 8l9 5 9-5-9-5z"/><path d="m3 13 9 5 9-5"/></svg></button>
   <button class="round" id="listBtn" aria-label="點位清單"><svg viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13"/><circle cx="3.5" cy="6" r="1"/><circle cx="3.5" cy="12" r="1"/><circle cx="3.5" cy="18" r="1"/></svg></button>
+  <button class="round" id="progBtn" aria-label="工作進度"><svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1M8.5 12l2 2 4-4M8.5 17h7"/></svg></button>
   <button class="round" id="locBtn" aria-label="我的位置"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg></button>
 </div>
 <button id="addBtn">＋ 新增點位</button>
@@ -291,22 +301,50 @@ function parseKmlLines(text){
 
 /* ---- 匯出 ---- */
 const csvEsc=v=>{const s=v==null?'':String(v);return /[",\n\r]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s};
+const CSV_MARKS=['鋼標','道釘','其他'];
+function calcProgress(pts,linkedIds){
+  const linked=linkedIds instanceof Set?linkedIds:new Set(linkedIds||[]);
+  const out={total:pts.length,marks:{'鋼標':0,'道釘':0,'其他':0,'未設定':0},BI:{count:0,max:0,used:[],missing:[]},HI:{count:0,max:0,used:[],missing:[]},other:[],noMark:[],noLink:[],noNote:[]};
+  pts.forEach(p=>{
+    const m=CSV_MARKS.includes(p.mark)?p.mark:'未設定';out.marks[m]++;
+    const pn=parseName(p.name);
+    if(pn){const g=out[pn.p];g.count++;g.used.push(pn.n);if(pn.n>g.max)g.max=pn.n}else out.other.push(p.name);
+    if(m==='未設定')out.noMark.push(p);
+    if(!linked.has(p.id))out.noLink.push(p);
+    if(m==='其他'&&!String(p.note||'').trim())out.noNote.push(p);
+  });
+  ['BI','HI'].forEach(k=>{const g=out[k],set=new Set(g.used);for(let i=1;i<=g.max;i++)if(!set.has(i))g.missing.push(i);g.used.sort((x,y)=>x-y)});
+  const byName=(x,y)=>nameCmp(x.name,y.name);out.noMark.sort(byName);out.noLink.sort(byName);out.noNote.sort(byName);
+  return out;
+}
 function buildCsv(pts,opt){
+  const sorted=pts.slice().sort((a,b)=>nameCmp(a.name,b.name));
   const rows=[];
-  if(opt.header)rows.push(['點名','N','E'].concat(opt.extra?['緯度','經度','精度(m)','樁標種類','備註','建立者','最後修改者']:[]));
-  pts.slice().sort((a,b)=>nameCmp(a.name,b.name)).forEach(p=>{
-    const t=toTM2(p.lat,p.lng),r=[p.name,t.N.toFixed(3),t.E.toFixed(3)];
-    if(opt.extra)r.push(p.lat.toFixed(8),p.lng.toFixed(8),p.acc!=null?Math.round(p.acc):'',p.mark||'',p.note||'',p.by||'',p.editedBy||p.by||'');
+  if(opt.header)rows.push(['點名','N','E','樁標種類'].concat(opt.extra?['緯度','經度','精度(m)','建立者','最後修改者']:[]));
+  sorted.forEach(p=>{
+    const t=toTM2(p.lat,p.lng),r=[p.name,t.N.toFixed(3),t.E.toFixed(3),p.mark||''];
+    if(opt.extra)r.push(p.lat.toFixed(8),p.lng.toFixed(8),p.acc!=null?Math.round(p.acc):'',p.by||'',p.editedBy||p.by||'');
     rows.push(r);
   });
-  return '﻿'+rows.map(r=>r.map(csvEsc).join(',')).join('\r\n')+'\r\n';
+  if(opt.stats!==false){
+    const pr=calcProgress(sorted,new Set());
+    rows.push([]);
+    rows.push(['鋼標',pr.marks['鋼標']],['道釘',pr.marks['道釘']],['其他',pr.marks['其他']],['未設定',pr.marks['未設定']]);
+    rows.push(['BI開頭',pr.BI.count],['HI開頭',pr.HI.count]);
+    if(pr.other.length)rows.push(['其他格式',pr.other.length]);
+    rows.push(['總計',pr.total]);
+    sorted.forEach(p=>{if(String(p.note||'').trim())rows.push(['備註',p.name,String(p.note).trim()])});
+  }
+  const w=4+(opt.extra?5:0);
+  return '﻿'+rows.map(r=>{const q=r.slice();while(q.length<w)q.push('');return q.map(csvEsc).join(',')}).join('\r\n')+'\r\n';
 }
 const xmlEsc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]));
 function distM(a,b){const p=toTM2(a.lat,a.lng),q=toTM2(b.lat,b.lng);return Math.hypot(p.N-q.N,p.E-q.E)}
-function buildLinesKml(lineList,title){
+function kmlColor(hex){const h=String(hex||'#1d6fe0').replace('#','');return 'ff'+h.slice(4,6)+h.slice(2,4)+h.slice(0,2)}
+function buildLinesKml(lineList,title,colorHex){
   const items=lineList.map(l=>({label:l.a.name+'-'+l.b.name,a:l.a,b:l.b})).sort((x,y)=>nameCmp(x.label,y.label));
   return '<?xml version="1.0" encoding="UTF-8"?>\n<kml xmlns="http://www.opengis.net/kml/2.2"><Document>\n<name>'+xmlEsc(title)+'</name>\n'+
-    '<Style id="sight"><LineStyle><color>ff0c59e8</color><width>3</width></LineStyle></Style>\n'+
+    '<Style id="sight"><LineStyle><color>'+kmlColor(colorHex)+'</color><width>3</width></LineStyle></Style>\n'+
     items.map(i=>'<Placemark><name>'+xmlEsc(i.label)+'</name><description>距離 '+distM(i.a,i.b).toFixed(2)+' m</description><styleUrl>#sight</styleUrl><LineString><tessellate>1</tessellate><coordinates>'+
       i.a.lng.toFixed(8)+','+i.a.lat.toFixed(8)+',0 '+i.b.lng.toFixed(8)+','+i.b.lat.toFixed(8)+',0</coordinates></LineString></Placemark>').join('\n')+'\n</Document></kml>\n';
 }
@@ -348,20 +386,22 @@ const map=L.map('map',{zoomControl:false,center:[23.487,120.471],zoom:16,maxZoom
 const wmts=k=>L.tileLayer('https://wmts.nlsc.gov.tw/wmts/'+k+'/default/GoogleMapsCompatible/{z}/{y}/{x}',{maxNativeZoom:19,maxZoom:20,attribution:'© 內政部國土測繪中心'});
 const bases={emap:wmts('EMAP'),photo:wmts('PHOTO2')};
 const sectLayer=wmts('LANDSECT2');
-let baseKey=store.get('cp_base');if(!bases[baseKey])baseKey='emap';
-bases[baseKey].addTo(map);
+let baseKey=store.get('cp_base');if(!bases[baseKey]&&baseKey!=='none')baseKey='emap';
+if(bases[baseKey])bases[baseKey].addTo(map);
+document.getElementById('map').classList.toggle('nobase',baseKey==='none');
 const ly={sect:store.get('cp_ly2_sect')!=='0',known:store.get('cp_ly_known')!=='0',root:store.get('cp_ly_root')!=='0',ks:store.get('cp_ly_ks')!=='0',cad:store.get('cp_ly2_cad')!=='0'};
 function syncSeg(){document.querySelectorAll('.seg button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.b===baseKey)))}
 syncSeg();
 document.querySelector('.seg').addEventListener('click',e=>{
   const b=e.target.closest('button');if(!b||b.dataset.b===baseKey)return;
-  map.removeLayer(bases[baseKey]);baseKey=b.dataset.b;bases[baseKey].addTo(map);store.set('cp_base',baseKey);syncSeg();
+  if(bases[baseKey])map.removeLayer(bases[baseKey]);baseKey=b.dataset.b;if(bases[baseKey])bases[baseKey].addTo(map);
+  document.getElementById('map').classList.toggle('nobase',baseKey==='none');store.set('cp_base',baseKey);syncSeg();
   if(ly.sect){sectLayer.remove();sectLayer.addTo(map)}
 });
 function applySect(){if(ly.sect){if(!map.hasLayer(sectLayer))sectLayer.addTo(map)}else if(map.hasLayer(sectLayer))map.removeLayer(sectLayer)}
 applySect();
 
-/* 地籍圖（KML，存在這支手機的瀏覽器內）（KML，存在這支手機的瀏覽器內） */
+/* 地籍圖（來自 GitHub 的 cadastre.kml） */
 const cadR=L.canvas({padding:.4});
 let cadLayer=null,cadInfo={n:0,name:''};
 const idb={
@@ -435,8 +475,11 @@ document.querySelector('.mapbar').addEventListener('click',e=>{
 /* ---------- state ---------- */
 const points=new Map(),known=new Map(),lines=new Map(),markers=new Map(),polys=new Map();
 let mode='idle',sel=null,confirmDel=false,gpsFix=null,pendingSel=null,fitted=false,unsubs=[],pending=false,online=navigator.onLine,syncErr=false;
-let dragId=null,lp=null,lpLast=0,locLayers=[],listTab='new',posSys='tm',posId=null,impMsg='',busy=false,csvOpt={header:false,extra:true},armed=null;
+let dragId=null,lp=null,lpLast=0,locLayers=[],listTab='new',posSys='tm',posId=null,impMsg='',busy=false,csvOpt={header:false,extra:true,stats:true},armed=null;
 let lastPrefix=PREFIXES.includes(store.get('cp_prefix'))?store.get('cp_prefix'):'BI';
+const LINE_COLORS=[['藍','#1d6fe0'],['紅','#e03131'],['橘','#e8590c'],['黃','#f2b705'],['綠','#2f9e44'],['青','#0c8599'],['紫','#7048e8'],['粉','#d6336c'],['棕','#8d5524'],['黑','#212529']];
+let lineColor=(LINE_COLORS.find(c=>c[1]===store.get('cp_linecolor'))||LINE_COLORS[0])[1];
+document.documentElement.style.setProperty('--linec',lineColor);
 const isK=id=>String(id).startsWith('k_');
 const isRoot=id=>{const p=known.get(id);return !!p&&p.cat==='root'};
 const catName=id=>isRoot(id)?'歷年圖根':'加密點';
@@ -503,7 +546,7 @@ function draw(){
     const keep=isK(id)?(known.has(id)&&lyOn(id)):points.has(id);
     if(!keep){map.removeLayer(m);markers.delete(id)}
   });
-  const sight=getComputedStyle(document.documentElement).getPropertyValue('--sight').trim()||'#e8590c';
+  const sight=lineColor;
   const rmPoly=k=>{const o=polys.get(k);if(o){map.removeLayer(o.v);map.removeLayer(o.h);polys.delete(k)}};
   lines.forEach((l,k)=>{
     const a=getPt(l.a),b=getPt(l.b);
@@ -522,6 +565,7 @@ function draw(){
   if(pendingSel&&points.has(pendingSel)){const id=pendingSel;pendingSel=null;select(id);return}
   if(mode==='detail'||mode==='link'){if(!getPt(sel)){closeAll();return}refreshDetail()}
   else if(mode==='list'){if(!posId)renderList()}
+  else if(mode==='progress')renderProgress();
   else if(mode==='add'){const r=$('#addEd .ed');if(r)edCheck(r)}
 }
 
@@ -813,6 +857,34 @@ async function applyPos(){
 }
 
 /* ---------- list ---------- */
+function enterProgress(){
+  if(needProject())return;
+  sel=null;mode='progress';$('#cross').hidden=true;renderProgress();draw();
+}
+function renderProgress(){
+  const linked=new Set();points.forEach((p,id)=>{if(linksOf(id).length)linked.add(id)});
+  const pr=calcProgress([...points.values()],linked);
+  const nm=(k,n)=>k+String(n).padStart(3,'0');
+  const numRow=k=>{
+    const g=pr[k];
+    if(!g.count)return '<li><span class="nm">'+k+'</span><span class="d">尚無</span></li>';
+    const miss=g.missing.length?'<div class="bad2">缺號：'+g.missing.map(n=>nm(k,n)).join('、')+'</div>':'<div class="ok2">無跳號 ✓</div>';
+    return '<li class="pe"><div class="prow"><b>'+k+'</b><span>共 '+g.count+' 點，最大 '+nm(k,g.max)+'</span></div>'+miss+'</li>';
+  };
+  const chips=(arr)=>arr.map(p=>'<button type="button" class="mini" data-go="'+esc(p.id)+'">'+esc(p.name)+'</button>').join('');
+  const todo=(title,arr)=>'<div class="grp"><span class="label">'+title+'（'+arr.length+'）</span>'+(arr.length?'<div class="btns">'+chips(arr)+'</div>':'<div class="ok2">全部完成 ✓</div>')+'</div>';
+  showSheet('<div class="head"><h2>工作進度</h2><button class="x" data-act="close" aria-label="關閉">×</button></div>'+
+    '<div class="grp"><span class="label">點號使用情況</span><ul class="list">'+numRow('BI')+numRow('HI')+
+    (pr.other.length?'<li class="pe"><div class="prow"><b>其他格式</b><span>'+pr.other.length+' 點</span></div><div class="hint">'+pr.other.map(esc).join('、')+'</div></li>':'')+'</ul></div>'+
+    '<div class="grp"><span class="label">統計</span><ul class="list">'+
+    '<li><span class="nm">新設點總數</span><span class="d">'+pr.total+'</span></li>'+
+    '<li><span class="nm">BI 開頭／HI 開頭</span><span class="d">'+pr.BI.count+' ／ '+pr.HI.count+'</span></li>'+
+    '<li><span class="nm">鋼標</span><span class="d">'+pr.marks['鋼標']+'</span></li>'+
+    '<li><span class="nm">道釘</span><span class="d">'+pr.marks['道釘']+'</span></li>'+
+    '<li><span class="nm">其他</span><span class="d">'+pr.marks['其他']+'</span></li>'+
+    '<li><span class="nm">樁標未設定</span><span class="d">'+pr.marks['未設定']+'</span></li></ul></div>'+
+    todo('未設定樁標種類',pr.noMark)+todo('通視線為 0',pr.noLink)+todo('樁標為「其他」但沒填備註',pr.noNote));
+}
 function enterList(){
   if(needProject())return;
   posId=null;
@@ -841,13 +913,15 @@ function renderLayers(){
    '<label class="row"><input type="checkbox" data-ly="ks"'+(ly.ks?' checked':'')+'><span>已知點通視（'+(ksInfo.n?ksInfo.n.toLocaleString()+' 條線':esc(stat.ks))+'）</span></label>'+
    '<p class="hint">段籍圖和地籍圖（'+esc(cadTxt)+'）的開關在地圖上方。</p>'+
    '<p class="hint">地籍圖、加密點、歷年圖根、已知點通視的資料來自 GitHub 專案根目錄的 '+Object.values(STATIC).join('、')+'；更新檔案後，重新整理頁面就會自動換成新版。</p></div>'+
+   '<div class="grp"><span class="label">通視線顏色（只改這支手機的顯示）</span><div class="cgrid">'+LINE_COLORS.map(c=>'<button type="button" class="cbtn" data-lc="'+c[1]+'" style="background:'+c[1]+'" aria-label="'+c[0]+'" aria-pressed="'+(c[1]===lineColor)+'"></button>').join('')+'</div></div>'+
    '<div class="grp"><span class="label">匯入新設點</span><div class="btns">'+
    '<button class="btn" data-imp="new">已選好的新設點</button></div>'+
    '<p class="hint">已選好的新設點匯入後會同步給所有組員。</p>'+
    '<div class="hint" id="impMsg">'+esc(impMsg)+'</div></div>'+
    '<div class="grp"><span class="label">匯出</span>'+
    '<label class="row"><input type="checkbox" id="csvHead"'+(csvOpt.header?' checked':'')+'><span>CSV 加標題列</span></label>'+
-   '<label class="row"><input type="checkbox" id="csvExtra"'+(csvOpt.extra?' checked':'')+'><span>CSV 在 點名、N、E 之後附加欄位（緯度、經度、精度、樁標種類、備註、建立者、修改者）</span></label>'+
+   '<label class="row"><input type="checkbox" id="csvExtra"'+(csvOpt.extra?' checked':'')+'><span>CSV 在 點名、N、E、樁標種類 之後附加欄位（緯度、經度、精度、建立者、修改者）</span></label>'+
+   '<label class="row"><input type="checkbox" id="csvStats"'+(csvOpt.stats?' checked':'')+'><span>CSV 最後附加統計列（樁標種類、BI／HI 數量、總計）和備註列</span></label>'+
    '<div class="btns"><button class="btn pri" data-act="expCsv">新設點 CSV</button><button class="btn pri" data-act="expKml">通視線 KML</button></div></div>'+
 '');
 }
@@ -868,7 +942,7 @@ function exportKml(){
   if(needProject())return;
   const list=[];lines.forEach(l=>{const a=getPt(l.a),b=getPt(l.b);if(a&&b)list.push({a,b})});
   if(!list.length){toast('還沒有通視線可以匯出');return}
-  saveFile('sightlines_'+code+'_'+stamp()+'.kml',buildLinesKml(list,'通視線 '+code),'application/vnd.google-earth.kml+xml');
+  saveFile('sightlines_'+code+'_'+stamp()+'.kml',buildLinesKml(list,'通視線 '+code,lineColor),'application/vnd.google-earth.kml+xml');
   toast('已匯出 '+list.length+' 條通視線，請到手機的下載項目查看');
 }
 async function commitChunks(ops,size){
@@ -958,6 +1032,12 @@ async function clearKnown(cat){
 /* ---------- events ---------- */
 sheet.addEventListener('click',e=>{
   const t=e.target.closest('button');if(!t)return;
+  if(t.dataset.lc){
+    lineColor=t.dataset.lc;store.set('cp_linecolor',lineColor);document.documentElement.style.setProperty('--linec',lineColor);
+    polys.forEach(o=>{map.removeLayer(o.v);map.removeLayer(o.h)});polys.clear();draw();
+    if(mode==='layers')renderLayers();
+    return;
+  }
   if(t.dataset.rm){toggleLine(sel,t.dataset.rm);return}
   if(t.dataset.pos){openPos(t.dataset.pos);return}
   if(t.dataset.go){const p=getPt(t.dataset.go);if(p){showLyOf(p.id);map.setView([p.lat,p.lng],Math.max(map.getZoom(),18));select(p.id)}return}
@@ -1010,6 +1090,7 @@ sheet.addEventListener('change',e=>{
   }
   if(el.id==='csvHead'){csvOpt.header=el.checked;return}
   if(el.id==='csvExtra'){csvOpt.extra=el.checked;return}
+  if(el.id==='csvStats'){csvOpt.stats=el.checked;return}
   if(el.id==='fMark'){const p=points.get(sel);if(!p)return;const nb=$('#noteBox');if(nb)nb.hidden=(el.value!=='其他');if(el.value!==(p.mark||''))savePoint({mark:el.value});return}
   if(el.id==='fNote'){const p=points.get(sel);if(!p)return;const v=el.value.trim();if(v!==(p.note||''))savePoint({note:v})}
 });
@@ -1021,9 +1102,10 @@ $('#fileIn').addEventListener('change',e=>{
 });
 map.on('dragstart',()=>{gpsFix=null;clearLoc()});
 map.on('zoomstart',()=>{if(Date.now()>locGuard)clearLoc()});
-map.on('click',()=>{if(mode==='detail'||mode==='list'||mode==='layers')closeAll()});
+map.on('click',()=>{if(mode==='detail'||mode==='list'||mode==='layers'||mode==='progress')closeAll()});
 $('#addBtn').addEventListener('click',enterAdd);
 $('#listBtn').addEventListener('click',enterList);
+$('#progBtn').addEventListener('click',enterProgress);
 $('#layBtn').addEventListener('click',enterLayers);
 $('#locBtn').addEventListener('click',()=>{
   getFix().then(c=>{const r=showMe(c,true);if(!r.near.length)map.setView([c.latitude,c.longitude],Math.max(map.getZoom(),18));toast('定位精度約 ±'+Math.round(c.accuracy)+' m。'+nearTxt(r))}).catch(gpsProblem);
