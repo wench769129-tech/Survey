@@ -189,9 +189,9 @@ ol.steps{margin:0;padding-left:20px;line-height:1.8;font-size:14px}
 <div id="login" class="modal" hidden>
   <form class="card" id="loginForm">
     <h1>姓名與專案</h1>
-    <p class="hint">姓名會記錄在你新增和修改的點位上。同一個專案的人會看到同一份資料。</p>
+    <p class="hint">姓名會記錄在你新增和修改的點位上。輸入專案密碼進入專案，密碼請只給組員。已登入、只想改姓名時，密碼可留空。</p>
     <div><label class="label" for="nameIn">你的姓名</label><input class="in" id="nameIn" maxlength="20" autocomplete="off" placeholder="例如：王小明" required></div>
-    <div><span class="label">選擇專案</span><div class="seg2" id="projSeg"></div></div>
+    <div><label class="label" for="pwIn">專案密碼</label><input class="in" id="pwIn" maxlength="40" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="例如：abcd-efgh-jkmn-pqrs"></div>
     <div class="btns">
       <button class="btn pri" type="submit">進入專案</button>
       <button class="btn" type="button" id="copyLink">複製分享連結</button>
@@ -317,16 +317,22 @@ const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;'
 const cfgOk=firebaseConfig.projectId&&firebaseConfig.projectId!=='REPLACE_ME';
 let me='',code='';
 const store={get(k){try{return localStorage.getItem(k)||''}catch(e){return ''}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
-me=store.get('cp_name');code=store.get('cp_code');
+me=store.get('cp_name');
 const cleanCode=s=>String(s||'').trim().replace(/[^A-Za-z0-9_-]/g,'');
-/* 只開放這兩個專案；code 是資料庫裡的專案代碼（至少 6 字元），name 是畫面上顯示的名稱 */
-const PROJECTS=[{name:'測試用',code:'1161010'},{name:'116Chiayi',code:'116Chiayi'}];
-const projOf=c=>PROJECTS.find(p=>p.code===c);
-const projName=c=>(projOf(c)||{name:c}).name;
-const hashCode=cleanCode(decodeURIComponent((location.hash||'').slice(1)));
-if(projOf(hashCode))code=hashCode;
-if(!projOf(code))code='';
-let selCode='';
+/* 專案密碼：資料庫路徑＝密碼（16 字元，無法猜到）。網頁只存密碼的 SHA-256，不存密碼本身；資料庫規則另外只放行這兩組密碼 */
+const PROJECTS=[{name:'測試用',h:'26ed4b633ee2c7e31c83904672650186caec4859f14890eebae53c6dddeab111'},{name:'116Chiayi',h:'586f35d47d66840223b0c64b4fdf1384f3684667eed33810fae49ef76ac2fa64'}];
+const normPw=s=>String(s||'').toLowerCase().replace(/[^a-z0-9]/g,'');
+async function resolveProject(pw){
+  const n=normPw(pw);
+  if(n.length<16||!(window.crypto&&crypto.subtle))return null;
+  const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(n));
+  const hex=[...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');
+  const p=PROJECTS.find(x=>x.h===hex);
+  return p?{name:p.name,code:n}:null;
+}
+let curName='',pendingPw=normPw(decodeURIComponent((location.hash||'').slice(1)));
+try{if(location.hash)history.replaceState(null,'',location.pathname)}catch(e){}
+const projName=()=>curName;
 
 /* ---------- firebase ---------- */
 let fs=null;
@@ -461,7 +467,7 @@ function setStatus(){
   else if(pending){t='同步中';c='wait'}
   else{t='已同步';c='ok'}
   dot.className='dot '+c;
-  st.textContent=projName(code)+' · '+t+' · 新設 '+points.size+' · 加密 '+[...known.values()].filter(p=>p.cat!=='root').length+' · 圖根 '+[...known.values()].filter(p=>p.cat==='root').length+' · 線 '+lines.size;
+  st.textContent=projName()+' · '+t+' · 新設 '+points.size+' · 加密 '+[...known.values()].filter(p=>p.cat!=='root').length+' · 圖根 '+[...known.values()].filter(p=>p.cat==='root').length+' · 線 '+lines.size;
 }
 addEventListener('online',()=>{online=true;setStatus()});
 addEventListener('offline',()=>{online=false;setStatus()});
@@ -1066,35 +1072,34 @@ function startMove(){
 
 /* ---------- login ---------- */
 function setWho(){$('#whoBtn').textContent=me||'登入'}
-function renderProj(){
-  $('#projSeg').innerHTML=PROJECTS.map(p=>'<button type="button" data-proj="'+esc(p.code)+'" aria-pressed="'+(selCode===p.code)+'">'+esc(p.name)+'</button>').join('');
-}
-$('#projSeg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;selCode=b.dataset.proj;renderProj()});
 function askLogin(){
-  $('#nameIn').value=me;selCode=projOf(code)?code:'';renderProj();
+  $('#nameIn').value=me;$('#pwIn').value='';
   $('#loginCancel').hidden=!(me&&code);
   $('#login').hidden=false;
-  if(!me)setTimeout(()=>$('#nameIn').focus(),50);
+  setTimeout(()=>(me?$('#pwIn'):$('#nameIn')).focus(),50);
 }
 $('#whoBtn').addEventListener('click',askLogin);
 $('#loginCancel').addEventListener('click',()=>{$('#login').hidden=true});
 $('#copyLink').addEventListener('click',async()=>{
-  const c=selCode;
-  if(!c){toast('請先選擇專案');return}
-  const url=location.origin+location.pathname+'#'+c;
-  try{await navigator.clipboard.writeText(url);toast('已複製，貼給組員即可直接進入「'+projName(c)+'」')}
-  catch(e){showInfo('分享連結','<p class="hint" style="word-break:break-all;user-select:all">'+esc(url)+'</p><p class="hint">長按上面的連結即可複製。</p>')}
+  const typed=$('#pwIn').value.trim();
+  const pj=typed?await resolveProject(typed):(code?{name:curName,code}:null);
+  if(!pj){toast(typed?'密碼錯誤':'請先輸入專案密碼');return}
+  const url=location.origin+location.pathname+'#'+pj.code;
+  try{await navigator.clipboard.writeText(url);toast('已複製，貼給組員即可直接進入「'+pj.name+'」（連結含密碼，請只給組員）')}
+  catch(e){showInfo('分享連結','<p class="hint" style="word-break:break-all;user-select:all">'+esc(url)+'</p><p class="hint">長按上面的連結即可複製。連結含密碼，請只給組員。</p>')}
 });
-$('#loginForm').addEventListener('submit',e=>{
+$('#loginForm').addEventListener('submit',async e=>{
   e.preventDefault();
-  const n=$('#nameIn').value.trim(),c=selCode;
+  const n=$('#nameIn').value.trim(),typed=$('#pwIn').value.trim();
   if(!n)return;
-  if(!projOf(c)){toast('請選擇專案');return}
-  const changed=c!==code;
-  me=n;code=c;store.set('cp_name',me);store.set('cp_code',code);
-  try{history.replaceState(null,'',location.pathname+'#'+code)}catch(err){}
+  let pj=null;
+  if(typed){pj=await resolveProject(typed);if(!pj){toast('密碼錯誤，請再確認');return}}
+  else if(code)pj={name:curName,code};
+  else{toast('請輸入專案密碼');return}
+  const changed=pj.code!==code;
+  me=n;code=pj.code;curName=pj.name;store.set('cp_name',me);store.set('cp_pw',code);
   $('#login').hidden=true;setWho();
-  if(changed||!unsubs.length)startSync();else draw();
+  if(changed||!unsubs.length)startSync();else{draw();setStatus()}
 });
 
 /* ---------- sync ---------- */
@@ -1127,9 +1132,14 @@ function startSync(){
 setWho();
 setStatus();
 loadStatic();
-if(!cfgOk)showInfo('尚未設定資料庫','<p class="hint">網頁裡的 Firebase 設定還沒填入。完成設定後，這個畫面就會消失。</p>');
-else if(!me||code.length<6)askLogin();
-else startSync();
+(async()=>{
+  const pw0=pendingPw||store.get('cp_pw');
+  if(pw0){const pj=await resolveProject(pw0);if(pj){code=pj.code;curName=pj.name;store.set('cp_pw',code)}else{code='';store.set('cp_pw','');if(pendingPw)toast('連結裡的密碼不正確')}}
+  setStatus();
+  if(!cfgOk)showInfo('尚未設定資料庫','<p class="hint">網頁裡的 Firebase 設定還沒填入。完成設定後，這個畫面就會消失。</p>');
+  else if(!me||!code)askLogin();
+  else startSync();
+})();
 </script>
 </body>
 </html>
