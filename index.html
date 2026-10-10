@@ -331,20 +331,24 @@ const map=L.map('map',{zoomControl:false,center:[23.487,120.471],zoom:16,maxZoom
 const wmts=k=>L.tileLayer('https://wmts.nlsc.gov.tw/wmts/'+k+'/default/GoogleMapsCompatible/{z}/{y}/{x}',{maxNativeZoom:19,maxZoom:20,attribution:'© 內政部國土測繪中心'});
 const bases={emap:wmts('EMAP'),photo:wmts('PHOTO2')};
 const sectLayer=wmts('LANDSECT2');
+const cadNlsc=L.tileLayer('https://wmts.nlsc.gov.tw/wmts/LAND_OPENDATA/default/GoogleMapsCompatible/{z}/{y}/{x}',{maxNativeZoom:19,maxZoom:20,opacity:.9,attribution:'© 內政部國土測繪中心（地籍圖僅供參考）'});
 let baseKey=store.get('cp_base');if(!bases[baseKey])baseKey='emap';
 bases[baseKey].addTo(map);
-const ly={sect:store.get('cp_ly2_sect')!=='0',known:store.get('cp_ly_known')!=='0',cad:store.get('cp_ly2_cad')!=='0'};
+const ly={sect:store.get('cp_ly2_sect')!=='0',known:store.get('cp_ly_known')!=='0',cad:store.get('cp_ly3_cad')!=='0'};
 function syncSeg(){document.querySelectorAll('.seg button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.b===baseKey)))}
 syncSeg();
 document.querySelector('.seg').addEventListener('click',e=>{
   const b=e.target.closest('button');if(!b||b.dataset.b===baseKey)return;
   map.removeLayer(bases[baseKey]);baseKey=b.dataset.b;bases[baseKey].addTo(map);store.set('cp_base',baseKey);syncSeg();
   if(ly.sect){sectLayer.remove();sectLayer.addTo(map)}
+  if(ly.cad){cadNlsc.remove();cadNlsc.addTo(map)}
 });
 function applySect(){if(ly.sect){if(!map.hasLayer(sectLayer))sectLayer.addTo(map)}else if(map.hasLayer(sectLayer))map.removeLayer(sectLayer)}
 applySect();
+function applyCad(){if(ly.cad){if(!map.hasLayer(cadNlsc))cadNlsc.addTo(map)}else if(map.hasLayer(cadNlsc))map.removeLayer(cadNlsc)}
+applyCad();
 
-/* 地籍圖（KML，存在這支手機的瀏覽器內） */
+/* KML 匯入的地籍線（不受上方開關控制）（KML，存在這支手機的瀏覽器內） */
 const cadR=L.canvas({padding:.4});
 let cadLayer=null,cadInfo={n:0,name:''};
 const idb={
@@ -358,10 +362,9 @@ function setCad(rings,name){
   cadInfo={n:rings?rings.length:0,name:name||''};
   if(rings&&rings.length){
     cadLayer=L.polyline(rings,{renderer:cadR,color:'#ff9f1a',weight:1.2,opacity:.95,interactive:false,smoothFactor:1.5});
-    if(ly.cad)cadLayer.addTo(map);
+    cadLayer.addTo(map);
   }
 }
-function applyCad(){if(!cadLayer)return;if(ly.cad){if(!map.hasLayer(cadLayer))cadLayer.addTo(map)}else if(map.hasLayer(cadLayer))map.removeLayer(cadLayer)}
 async function loadCad(){
   const saved=await idb.get('cad');
   if(saved&&saved.rings&&saved.rings.length){setCad(saved.rings,saved.name);return}
@@ -376,9 +379,8 @@ function syncTg(){document.querySelectorAll('.tg').forEach(b=>b.setAttribute('ar
 syncTg();
 document.querySelector('.mapbar').addEventListener('click',e=>{
   const b=e.target.closest('.tg');if(!b)return;
-  const k=b.dataset.ly;ly[k]=!ly[k];store.set('cp_ly2_'+k,ly[k]?'1':'0');syncTg();
-  if(k==='sect')applySect();
-  else{applyCad();if(ly.cad&&!cadInfo.n)toast('尚未匯入地籍圖，請到右側「圖層與資料」匯入 KML')}
+  const k=b.dataset.ly;ly[k]=!ly[k];store.set(k==='cad'?'cp_ly3_cad':'cp_ly2_'+k,ly[k]?'1':'0');syncTg();
+  if(k==='sect')applySect();else applyCad();
 });
 
 /* ---------- state ---------- */
@@ -532,9 +534,10 @@ function gpsProblem(e){
   else if(kind==='timeout')toast('定位逾時，請到空曠處再試一次');
   else toast('暫時無法取得位置，請確認手機定位已開啟');
 }
+let locGuard=0;
 function clearLoc(){locLayers.forEach(l=>map.removeLayer(l));locLayers=[]}
 function showMe(c,fit){
-  clearLoc();
+  clearLoc();locGuard=Date.now()+1500;
   const me0={lat:c.latitude,lng:c.longitude},ll=[c.latitude,c.longitude];
   locLayers.push(L.circle(ll,{radius:Math.max(c.accuracy||5,3),color:'#2563eb',weight:1,fillColor:'#2563eb',fillOpacity:.15,interactive:false}).addTo(map));
   locLayers.push(L.circleMarker(ll,{radius:6,color:'#ffffff',weight:2,fillColor:'#2563eb',fillOpacity:1,interactive:false}).addTo(map));
@@ -778,7 +781,7 @@ function renderLayers(){
   showSheet('<div class="head"><h2>圖層與資料</h2><button class="x" data-act="close" aria-label="關閉">×</button></div>'+
    '<div class="grp"><span class="label">圖層</span>'+
    '<label class="row"><input type="checkbox" data-ly="known"'+(ly.known?' checked':'')+'><span>已知點（'+known.size+'）</span></label>'+
-   '<p class="hint">段籍圖和地籍圖的開關在地圖上方。地籍圖：'+esc(cadTxt)+'。</p></div>'+
+   '<p class="hint">段籍圖、地籍圖（NLSC 線上圖層，僅供參考）的開關在地圖上方。自行匯入的 KML 地籍線（橘色）：'+esc(cadTxt)+'。</p></div>'+
    '<div class="grp"><span class="label">匯入 KML</span><div class="btns">'+
    '<button class="btn" data-imp="known">已知點</button><button class="btn" data-imp="new">已選好的新設點</button><button class="btn" data-imp="cad">地籍圖</button></div>'+
    '<p class="hint">已知點和新設點會同步給所有組員。地籍圖只存在這支手機，每個人各自匯入一次。</p>'+
@@ -829,7 +832,7 @@ async function importFile(kind,file){
     if(r.error==='kmz'){setImpMsg('這是 KMZ 壓縮檔，請先解壓縮，用裡面的 .kml 檔匯入。');return}
     if(!r.rings.length){setImpMsg('檔案裡沒有找到線段座標，請確認是地籍圖的 KML。');return}
     try{await idb.set('cad',{name:file.name,rings:r.rings})}catch(e){setImpMsg('已載入，但無法存到這支手機，下次開啟需要重新匯入。')}
-    ly.cad=true;store.set('cp_ly2_cad','1');syncTg();setCad(r.rings,file.name);
+    setCad(r.rings,file.name);
     if(cadLayer)map.fitBounds(cadLayer.getBounds());
     setImpMsg('地籍圖已載入：'+r.rings.length.toLocaleString()+' 條線。');
     if(mode==='layers')renderLayers();
@@ -923,7 +926,6 @@ sheet.addEventListener('change',e=>{
   if(el.dataset&&el.dataset.ly){
     ly[el.dataset.ly]=el.checked;store.set('cp_ly_'+el.dataset.ly,el.checked?'1':'0');
     if(el.dataset.ly==='sect')applySect();
-    if(el.dataset.ly==='cad')applyCad();
     if(el.dataset.ly==='known')draw();
     return;
   }
@@ -938,7 +940,8 @@ $('#fileIn').addEventListener('change',e=>{
   e.target.value='';
   if(f&&kind)importFile(kind,f);
 });
-map.on('dragstart',()=>{gpsFix=null});
+map.on('dragstart',()=>{gpsFix=null;clearLoc()});
+map.on('zoomstart',()=>{if(Date.now()>locGuard)clearLoc()});
 map.on('click',()=>{if(mode==='detail'||mode==='list'||mode==='layers')closeAll()});
 $('#addBtn').addEventListener('click',enterAdd);
 $('#listBtn').addEventListener('click',enterList);
