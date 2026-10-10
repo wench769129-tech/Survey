@@ -1,0 +1,505 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0d6b5b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>控制點選點</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Noto+Sans+TC:wght@400;500;700&display=swap">
+<style>
+/* Layout: 全螢幕地圖，頂部狀態列，底部抽屜面板（新增／點位資料／通視編輯／清單） */
+:root{
+  --bg:#f1f3ef; --surface:#ffffff; --fg:#17211c; --muted:#5b6861; --line:#d3dad4;
+  --accent:#0d6b5b; --accent-fg:#ffffff; --sight:#e8590c; --danger:#c22a2a; --halo:rgba(13,107,91,.18);
+  --font:'Noto Sans TC','PingFang TC','Microsoft JhengHei',system-ui,sans-serif;
+  --mono:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#101612; --surface:#19211c; --fg:#e6ece7; --muted:#9aa8a0; --line:#2c3831;
+  --accent:#3fc4a8; --accent-fg:#06211b; --sight:#ff922b; --danger:#ff7a7a; --halo:rgba(63,196,168,.22); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#101612; --surface:#19211c; --fg:#e6ece7; --muted:#9aa8a0; --line:#2c3831;
+  --accent:#3fc4a8; --accent-fg:#06211b; --sight:#ff922b; --danger:#ff7a7a; --halo:rgba(63,196,168,.22); color-scheme:dark}
+
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--fg);font-family:var(--font);font-size:14px;overflow:hidden;-webkit-tap-highlight-color:transparent}
+button,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+[hidden]{display:none!important}
+
+#map{position:fixed;inset:0;z-index:0;background:#cfd6d1}
+.leaflet-control-attribution{background:color-mix(in srgb,var(--surface) 82%,transparent)!important;color:var(--muted)!important;font-size:10px}
+.leaflet-control-attribution a{color:inherit!important}
+
+/* markers */
+.pinwrap{background:none;border:0}
+.pin{position:absolute;left:0;top:0;display:flex;align-items:center;gap:6px;transform:translate(-14px,-14px);pointer-events:none}
+.pin i{pointer-events:auto;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;flex:none}
+.pin i::after{content:"";width:14px;height:14px;border-radius:50%;background:var(--accent);border:2.5px solid #fff;box-shadow:0 0 0 1.5px rgba(0,0,0,.45)}
+.pin span{pointer-events:none;background:color-mix(in srgb,var(--surface) 92%,transparent);color:var(--fg);font-size:12px;font-weight:700;padding:1px 6px;border-radius:4px;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.35)}
+.pin.sel i{background:var(--halo)}
+.pin.sel i::after{background:var(--sight);width:18px;height:18px}
+.pin.cand i::after{background:#fff;border-color:var(--sight)}
+.pin.lk i::after{background:var(--sight)}
+
+/* top bar */
+.top{position:fixed;z-index:1100;left:0;right:0;top:0;padding:calc(env(safe-area-inset-top,0px) + 10px) 12px 0;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.top>*{pointer-events:auto}
+.bar{display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:6px 6px 6px 14px;box-shadow:0 2px 10px rgba(0,0,0,.18)}
+.brand{display:flex;flex-direction:column;min-width:0}
+.brand b{font-size:15px;line-height:1.2}
+.brand small{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;min-width:0}
+.brand small span+span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--muted);flex:none}
+.dot.ok{background:#2fb344}.dot.bad{background:var(--danger)}.dot.wait{background:#f0a400}
+.chip{min-height:40px;max-width:44vw;padding:0 12px;border-radius:9px;border:1px solid var(--line);background:var(--bg);font-size:14px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:none}
+.seg{align-self:flex-start;display:flex;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:3px;box-shadow:0 2px 10px rgba(0,0,0,.18)}
+.seg button{min-height:36px;padding:0 14px;border:0;border-radius:7px;background:none;font-size:14px;font-weight:500;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-fg)}
+
+/* fabs */
+.fabs{position:fixed;z-index:1100;right:12px;bottom:calc(env(safe-area-inset-bottom,0px) + 82px);display:flex;flex-direction:column;gap:10px}
+.round{width:48px;height:48px;border-radius:50%;border:1px solid var(--line);background:var(--surface);display:grid;place-items:center;box-shadow:0 2px 10px rgba(0,0,0,.22)}
+.round svg{width:22px;height:22px;stroke:var(--fg);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+#addBtn{position:fixed;z-index:1100;left:12px;right:12px;bottom:calc(env(safe-area-inset-bottom,0px) + 14px);min-height:54px;border-radius:14px;border:0;background:var(--accent);color:var(--accent-fg);font-size:17px;font-weight:700;box-shadow:0 4px 14px rgba(0,0,0,.3)}
+body.has-sheet .fabs,body.has-sheet #addBtn{display:none}
+
+/* crosshair */
+#cross{position:fixed;z-index:1050;left:50%;top:50%;width:44px;height:44px;margin:-22px 0 0 -22px;pointer-events:none}
+#cross svg{width:100%;height:100%;stroke:var(--sight);stroke-width:2.5;fill:none;filter:drop-shadow(0 0 2px #fff)}
+
+/* sheet */
+#sheet{position:fixed;z-index:1200;left:0;right:0;bottom:0;max-height:62vh;overflow-y:auto;background:var(--surface);border-top:1px solid var(--line);border-radius:18px 18px 0 0;box-shadow:0 -6px 24px rgba(0,0,0,.28);padding:6px 16px calc(env(safe-area-inset-bottom,0px) + 14px);display:flex;flex-direction:column;gap:12px}
+.grab{width:38px;height:4px;border-radius:2px;background:var(--line);align-self:center;flex:none}
+.head{display:flex;gap:8px;align-items:center}
+.head h2{margin:0;font-size:17px;flex:1;min-width:0}
+.x{width:40px;height:40px;border-radius:10px;border:1px solid var(--line);background:var(--bg);font-size:20px;line-height:1;flex:none}
+.in{width:100%;min-height:46px;border:1px solid var(--line);border-radius:10px;background:var(--bg);padding:0 12px;font-size:16px;min-width:0}
+textarea.in{min-height:64px;padding:10px 12px;resize:vertical}
+.in.name{font-weight:700;font-size:18px}
+.mono{font-family:var(--mono);font-size:13px;color:var(--muted);overflow-wrap:anywhere}
+.label{font-size:12px;color:var(--muted);letter-spacing:.06em;margin-bottom:4px;display:block}
+.btns{display:flex;gap:10px;flex-wrap:wrap}
+.btn{flex:1;min-width:120px;min-height:48px;border-radius:12px;border:1px solid var(--line);background:var(--bg);font-weight:700;font-size:15px}
+.btn.pri{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.btn.sight{background:var(--sight);border-color:var(--sight);color:#fff}
+.btn.dng{color:var(--danger)}
+.btn.dngfill{background:var(--danger);border-color:var(--danger);color:#fff}
+.hint{margin:0;font-size:14px;color:var(--muted);line-height:1.6}
+.meta{font-size:12px;color:var(--muted);line-height:1.7}
+.list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.list li{display:flex;align-items:center;gap:10px;padding:8px 8px 8px 12px;min-height:46px}
+.list li+li{border-top:1px solid var(--line)}
+.list .nm{flex:1;min-width:0;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.list .d{font-family:var(--mono);font-size:13px;color:var(--muted)}
+.list button.rm{min-height:36px;padding:0 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);font-size:13px;color:var(--danger)}
+.list button.go{flex:1;min-width:0;display:flex;align-items:center;gap:10px;min-height:44px;border:0;background:none;text-align:left;padding:0}
+.empty{padding:14px;color:var(--muted);font-size:14px}
+.swatch{display:inline-block;width:18px;height:3px;background:var(--sight);vertical-align:middle;margin-right:6px;border-radius:2px}
+ol.steps{margin:0;padding-left:20px;line-height:1.8;font-size:14px}
+
+/* toast + modal */
+#toast{position:fixed;z-index:1400;left:16px;right:16px;top:calc(env(safe-area-inset-top,0px) + 112px);margin:auto;max-width:420px;background:var(--fg);color:var(--bg);padding:10px 14px;border-radius:10px;font-size:14px;line-height:1.5;text-align:center;opacity:0;pointer-events:none;transition:opacity .2s}
+#toast.on{opacity:1}
+.modal{position:fixed;z-index:1300;inset:0;background:rgba(0,0,0,.55);display:grid;place-items:center;padding:16px;overflow-y:auto}
+.card{width:100%;max-width:400px;background:var(--surface);border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:14px;border:1px solid var(--line)}
+.card h1{margin:0;font-size:20px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<div id="map"></div>
+<div id="cross" hidden><svg viewBox="0 0 44 44"><circle cx="22" cy="22" r="9"/><path d="M22 2v10M22 32v10M2 22h10M32 22h10"/></svg></div>
+
+<div class="top">
+  <div class="bar">
+    <div class="brand"><b>控制點選點</b><small><span class="dot" id="dot"></span><span id="stat">尚未進入專案</span></small></div>
+    <button class="chip" id="whoBtn" aria-label="姓名與專案代碼">登入</button>
+  </div>
+  <div class="seg" role="group" aria-label="底圖">
+    <button type="button" data-b="emap" aria-pressed="true">電子地圖</button>
+    <button type="button" data-b="photo" aria-pressed="false">正射影像</button>
+  </div>
+</div>
+
+<div class="fabs">
+  <button class="round" id="listBtn" aria-label="點位清單"><svg viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13"/><circle cx="3.5" cy="6" r="1"/><circle cx="3.5" cy="12" r="1"/><circle cx="3.5" cy="18" r="1"/></svg></button>
+  <button class="round" id="locBtn" aria-label="我的位置"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg></button>
+</div>
+<button id="addBtn">＋ 新增點位</button>
+
+<section id="sheet" hidden></section>
+<div id="toast" role="status"></div>
+
+<div id="login" class="modal" hidden>
+  <form class="card" id="loginForm">
+    <h1>姓名與專案</h1>
+    <p class="hint">姓名會記錄在你新增和修改的點位上。同一個專案代碼的人會看到同一份資料，代碼請只分享給組員。</p>
+    <div><label class="label" for="nameIn">你的姓名</label><input class="in" id="nameIn" maxlength="20" autocomplete="off" placeholder="例如：王小明" required></div>
+    <div><label class="label" for="codeIn">專案代碼（至少 6 個英數字）</label><input class="in" id="codeIn" maxlength="40" autocomplete="off" autocapitalize="none" placeholder="例如：chiayi2610" required></div>
+    <div class="btns">
+      <button class="btn pri" type="submit">進入專案</button>
+      <button class="btn" type="button" id="copyLink">複製分享連結</button>
+    </div>
+    <button class="btn" type="button" id="loginCancel" hidden>取消</button>
+  </form>
+</div>
+
+<div id="info" class="modal" hidden>
+  <div class="card">
+    <h1 id="infoTitle"></h1>
+    <div id="infoBody"></div>
+    <button class="btn pri" id="infoOk" type="button">知道了</button>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script type="module">
+import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import {getFirestore,initializeFirestore,persistentLocalCache,collection,doc,setDoc,updateDoc,deleteDoc,onSnapshot} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+
+/* ====== Firebase 設定：把 firebaseConfig 貼在這裡 ====== */
+const firebaseConfig={
+  apiKey:"AIzaSyClBHkUDYzNqigkMyv-RrLrcGr40yA21h4",
+  authDomain:"survey-cp.firebaseapp.com",
+  projectId:"survey-cp",
+  storageBucket:"survey-cp.firebasestorage.app",
+  messagingSenderId:"537636434821",
+  appId:"1:537636434821:web:57c02a4be30f001fc4caec"
+};
+/* ================================================== */
+
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const cfgOk=firebaseConfig.projectId&&firebaseConfig.projectId!=='REPLACE_ME';
+let me='',code='';
+const store={get(k){try{return localStorage.getItem(k)||''}catch(e){return ''}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+me=store.get('cp_name');code=store.get('cp_code');
+const cleanCode=s=>String(s||'').trim().replace(/[^A-Za-z0-9_-]/g,'');
+const hashCode=cleanCode(decodeURIComponent((location.hash||'').slice(1)));
+if(hashCode.length>=6)code=hashCode;
+
+/* ---------- firebase ---------- */
+let fs=null;
+if(cfgOk){
+  const app=initializeApp(firebaseConfig);
+  try{fs=initializeFirestore(app,{localCache:persistentLocalCache()})}catch(e){fs=getFirestore(app)}
+}
+const colRef=c=>collection(fs,'projects',code,c);
+const docRef=(c,id)=>doc(fs,'projects',code,c,id);
+
+/* ---------- map ---------- */
+const map=L.map('map',{zoomControl:false,center:[23.487,120.471],zoom:16,maxZoom:20});
+const nlsc=k=>L.tileLayer('https://wmts.nlsc.gov.tw/wmts/'+k+'/default/GoogleMapsCompatible/{z}/{y}/{x}',{maxNativeZoom:19,maxZoom:20,attribution:'© 內政部國土測繪中心'});
+const bases={emap:nlsc('EMAP'),photo:nlsc('PHOTO2')};
+let baseKey=store.get('cp_base');if(!bases[baseKey])baseKey='emap';
+bases[baseKey].addTo(map);
+function syncSeg(){document.querySelectorAll('.seg button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.b===baseKey)))}
+syncSeg();
+document.querySelector('.seg').addEventListener('click',e=>{
+  const b=e.target.closest('button');if(!b||b.dataset.b===baseKey)return;
+  map.removeLayer(bases[baseKey]);baseKey=b.dataset.b;bases[baseKey].addTo(map);store.set('cp_base',baseKey);syncSeg();
+});
+
+/* ---------- state ---------- */
+const points=new Map(),lines=new Map(),markers=new Map(),polys=new Map();
+let mode='idle',sel=null,confirmDel=false,gpsFix=null,pendingSel=null,fitted=false,meDot=null,unsubs=[],pending=false,online=navigator.onLine,syncErr=false;
+const lineKey=(a,b)=>[a,b].sort().join('~');
+const fmtDist=m=>m>=1000?(m/1000).toFixed(2)+' km':m.toFixed(1)+' m';
+const fmtTime=t=>t?new Date(t).toLocaleString('zh-TW',{hour12:false,month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}):'';
+function dist(a,b){const R=6371008.8,t=Math.PI/180,dLa=(b.lat-a.lat)*t,dLo=(b.lng-a.lng)*t;const h=Math.sin(dLa/2)**2+Math.cos(a.lat*t)*Math.cos(b.lat*t)*Math.sin(dLo/2)**2;return 2*R*Math.asin(Math.sqrt(h))}
+function linksOf(id){const out=[];lines.forEach((l,k)=>{if(l.a===id&&points.has(l.b))out.push({k,other:l.b});else if(l.b===id&&points.has(l.a))out.push({k,other:l.a})});return out}
+function nextName(){let n=0;points.forEach(p=>{const m=/^P(\d+)$/i.exec(p.name||'');if(m)n=Math.max(n,+m[1])});return 'P'+String(n+1).padStart(2,'0')}
+let tt;function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('on'),3600)}
+const fire=p=>p.catch(()=>toast('寫入失敗，請確認網路與資料庫規則'));
+function showInfo(title,html){$('#infoTitle').textContent=title;$('#infoBody').innerHTML=html;$('#info').hidden=false}
+$('#infoOk').addEventListener('click',()=>{$('#info').hidden=true});
+
+/* ---------- status ---------- */
+function setStatus(){
+  const dot=$('#dot'),st=$('#stat');
+  if(!cfgOk){dot.className='dot bad';st.textContent='尚未設定 Firebase';return}
+  if(!code){dot.className='dot';st.textContent='尚未進入專案';return}
+  let t,c;
+  if(syncErr){t='無法讀取資料';c='bad'}
+  else if(!online){t='離線，恢復網路後同步';c='wait'}
+  else if(pending){t='同步中';c='wait'}
+  else{t='已同步';c='ok'}
+  dot.className='dot '+c;
+  st.textContent=code+' · '+t+' · '+points.size+' 點 · '+lines.size+' 線';
+}
+addEventListener('online',()=>{online=true;setStatus()});
+addEventListener('offline',()=>{online=false;setStatus()});
+
+/* ---------- drawing ---------- */
+function pinIcon(p){
+  const c=['pin'];
+  if(sel===p.id)c.push('sel');
+  else if(mode==='link'&&sel)c.push(lines.has(lineKey(sel,p.id))?'lk':'cand');
+  return L.divIcon({className:'pinwrap',iconSize:[0,0],html:'<div class="'+c.join(' ')+'"><i></i><span>'+esc(p.name)+'</span></div>'});
+}
+function draw(){
+  points.forEach((p,id)=>{
+    let m=markers.get(id);
+    if(!m){m=L.marker([p.lat,p.lng],{icon:pinIcon(p),keyboard:false});m.on('click',ev=>{L.DomEvent.stopPropagation(ev);onPin(id)});m.addTo(map);markers.set(id,m)}
+    else{m.setLatLng([p.lat,p.lng]);m.setIcon(pinIcon(p))}
+  });
+  markers.forEach((m,id)=>{if(!points.has(id)){map.removeLayer(m);markers.delete(id)}});
+  const sight=getComputedStyle(document.documentElement).getPropertyValue('--sight').trim()||'#e8590c';
+  lines.forEach((l,k)=>{
+    const a=points.get(l.a),b=points.get(l.b);
+    if(!a||!b){const o=polys.get(k);if(o){map.removeLayer(o);polys.delete(k)}return}
+    const ll=[[a.lat,a.lng],[b.lat,b.lng]];
+    let pl=polys.get(k);
+    if(!pl){pl=L.polyline(ll,{color:sight,weight:3,opacity:.95,interactive:false}).addTo(map);polys.set(k,pl)}else pl.setLatLngs(ll);
+  });
+  polys.forEach((pl,k)=>{if(!lines.has(k)){map.removeLayer(pl);polys.delete(k)}});
+  setStatus();
+  if(pendingSel&&points.has(pendingSel)){const id=pendingSel;pendingSel=null;select(id);return}
+  if(mode==='detail'||mode==='link'){if(!points.has(sel)){closeAll();return}refreshDetail()}
+  if(mode==='list')renderList();
+}
+
+/* ---------- sheet ---------- */
+const sheet=$('#sheet');
+function showSheet(html){sheet.innerHTML='<div class="grab"></div>'+html;sheet.hidden=false;sheet.scrollTop=0;document.body.classList.add('has-sheet')}
+function closeAll(){mode='idle';sel=null;confirmDel=false;gpsFix=null;$('#cross').hidden=true;sheet.hidden=true;sheet.innerHTML='';document.body.classList.remove('has-sheet');draw()}
+function needProject(){
+  if(!cfgOk){showInfo('尚未設定資料庫','<p class="hint">網頁裡的 Firebase 設定還沒填入，請依說明完成設定後再使用。</p>');return true}
+  if(!me||code.length<6){askLogin();return true}
+  return false;
+}
+
+/* ---------- GPS ---------- */
+async function getFix(){
+  if(!window.isSecureContext||!navigator.geolocation)throw {kind:'unsupported'};
+  let state='unknown';
+  try{state=(await navigator.permissions.query({name:'geolocation'})).state}catch(e){}
+  if(state==='denied')throw {kind:'denied'};
+  if(state==='prompt')toast('接下來手機會詢問是否允許位置，請選「允許」');
+  return new Promise((res,rej)=>navigator.geolocation.getCurrentPosition(p=>res(p.coords),
+    err=>rej({kind:err.code===1?'denied':err.code===3?'timeout':'unavailable'}),
+    {enableHighAccuracy:true,timeout:25000,maximumAge:0}));
+}
+function gpsProblem(e){
+  const kind=e&&e.kind;
+  if(kind==='denied'){
+    const ios=/iPhone|iPad|iPod/.test(navigator.userAgent);
+    showInfo('需要允許位置權限', ios
+      ?'<ol class="steps"><li>開啟手機「設定」→「隱私權與安全性」→「定位服務」，確認已開啟。</li><li>在同一頁往下找到「Safari 網站」，選「使用 App 期間」。</li><li>回到網頁，點網址列左側的「aA」→「網站設定」→「位置」→「允許」。</li><li>重新整理頁面，再按一次定位。</li></ol>'
+      :'<ol class="steps"><li>點網址列左側的圖示（鎖頭或調整圖示）→「權限」→「位置」→「允許」。</li><li>重新整理頁面，再按一次定位。</li><li>若仍失敗，到手機「設定」→「位置」確認定位已開啟，並選擇高精確度。</li></ol>');
+  }else if(kind==='unsupported')showInfo('無法使用定位','<p class="hint">這個瀏覽器或網址不支援定位。請用 Chrome 或 Safari 開啟 https 網址。你仍可以移動地圖，讓十字對準位置來新增點位。</p>');
+  else if(kind==='timeout')toast('定位逾時，請到空曠處再試一次');
+  else toast('暫時無法取得位置，請確認手機定位已開啟');
+}
+function showMe(c){
+  if(meDot)map.removeLayer(meDot);
+  meDot=L.circle([c.latitude,c.longitude],{radius:Math.max(c.accuracy||5,3),color:'#2563eb',weight:1,fillColor:'#2563eb',fillOpacity:.15,interactive:false}).addTo(map);
+}
+
+/* ---------- add ---------- */
+function enterAdd(){
+  if(needProject())return;
+  sel=null;mode='add';gpsFix=null;$('#cross').hidden=false;
+  showSheet('<div class="head"><h2>新增點位</h2><button class="x" data-act="close" aria-label="取消">×</button></div>'+
+   '<p class="hint" id="addHint">移動地圖，讓十字對準要選的位置，或按「使用我的位置」。</p>'+
+   '<div><label class="label" for="addName">點位名稱</label><input class="in name" id="addName" maxlength="30" autocomplete="off"></div>'+
+   '<div class="btns"><button class="btn" data-act="gps">使用我的位置</button><button class="btn pri" data-act="confirmAdd">確認新增</button></div>');
+  $('#addName').value=nextName();
+  draw();
+}
+function confirmAdd(){
+  const name=($('#addName').value||'').trim()||nextName();
+  const c=map.getCenter();
+  let lat=c.lat,lng=c.lng,acc=null,src='map';
+  if(gpsFix&&dist({lat:c.lat,lng:c.lng},gpsFix)<3){lat=gpsFix.lat;lng=gpsFix.lng;acc=gpsFix.acc;src='gps'}
+  const ref=doc(colRef('points')),now=Date.now();
+  pendingSel=ref.id;$('#cross').hidden=true;gpsFix=null;mode='idle';
+  fire(setDoc(ref,{name,lat,lng,acc,src,note:'',by:me,at:now,editedBy:me,editedAt:now}));
+}
+
+/* ---------- detail ---------- */
+function select(id){
+  if(!points.has(id))return;
+  sel=id;mode='detail';confirmDel=false;$('#cross').hidden=true;
+  showSheet('<div class="head"><input class="in name" id="fName" maxlength="30" aria-label="點位名稱" autocomplete="off"><button class="x" data-act="close" aria-label="關閉">×</button></div>'+
+   '<div class="mono" id="fCoord"></div>'+
+   '<div><label class="label" for="fNote">備註</label><textarea class="in" id="fNote" maxlength="500" placeholder="視野、障礙物、可到達方式…"></textarea></div>'+
+   '<div><span class="label" id="lkTitle">通視</span><div id="lkBox"></div></div>'+
+   '<div class="btns" id="actBtns"></div>'+
+   '<div class="meta" id="meta"></div>');
+  fillDetail(true);draw();
+  const p=points.get(id);if(p)map.panTo([p.lat,p.lng],{animate:true});
+}
+function lkListHtml(){
+  const ls=linksOf(sel),p0=points.get(sel);
+  if(!ls.length)return '<div class="list"><div class="empty">尚未建立通視線</div></div>';
+  return '<ul class="list">'+ls.map(x=>{const o=points.get(x.other);return '<li><span class="nm">'+esc(o.name)+'</span><span class="d">'+fmtDist(dist(p0,o))+'</span><button class="rm" data-rm="'+esc(x.other)+'">移除</button></li>'}).join('')+'</ul>';
+}
+function fillDetail(first){
+  const p=points.get(sel);if(!p)return;
+  const ae=document.activeElement,nm=$('#fName'),nt=$('#fNote');
+  if(nm&&(first||ae!==nm))nm.value=p.name||'';
+  if(nt&&(first||ae!==nt))nt.value=p.note||'';
+  $('#fCoord').textContent=p.lat.toFixed(7)+', '+p.lng.toFixed(7)+'  WGS84'+(p.acc!=null?'  ±'+Math.round(p.acc)+' m':(p.src==='map'?'  地圖選點':''));
+  $('#lkTitle').textContent='通視（'+linksOf(sel).length+'）';
+  $('#lkBox').innerHTML=lkListHtml();
+  $('#actBtns').innerHTML=confirmDel
+    ?'<button class="btn dngfill" data-act="delYes">確定刪除（含 '+linksOf(sel).length+' 條通視線）</button><button class="btn" data-act="delNo">取消</button>'
+    :'<button class="btn sight" data-act="link">編輯通視</button><button class="btn dng" data-act="del">刪除點位</button>';
+  $('#meta').innerHTML='建立：'+esc(p.by||'?')+' · '+fmtTime(p.at)+'<br>最後修改：'+esc(p.editedBy||p.by||'?')+' · '+fmtTime(p.editedAt||p.at);
+}
+function refreshDetail(){
+  if(mode==='link'){
+    if(!points.has(sel))return;
+    $('#lkBox').innerHTML=lkListHtml();$('#lkTitle').textContent='已連線（'+linksOf(sel).length+'）';return;
+  }
+  fillDetail(false);
+}
+function enterLink(){
+  const p=points.get(sel);if(!p)return;
+  mode='link';
+  showSheet('<div class="head"><h2><span class="swatch"></span>通視編輯：'+esc(p.name)+'</h2></div>'+
+   '<p class="hint">點選地圖上的其他點位即可連線，再點一次取消連線。實心橘點表示已連線。</p>'+
+   '<div><span class="label" id="lkTitle"></span><div id="lkBox"></div></div>'+
+   '<div class="btns"><button class="btn pri" data-act="linkDone">完成</button></div>');
+  $('#lkBox').innerHTML=lkListHtml();$('#lkTitle').textContent='已連線（'+linksOf(sel).length+'）';
+  draw();
+}
+function toggleLine(a,b){
+  const k=lineKey(a,b),ref=docRef('lines',k);
+  if(lines.has(k))fire(deleteDoc(ref));
+  else fire(setDoc(ref,{a,b,by:me,at:Date.now()}));
+}
+function onPin(id){
+  if(mode==='link'&&sel&&id!==sel){toggleLine(sel,id);return}
+  if(mode==='link'||mode==='add')return;
+  select(id);
+}
+function savePoint(patch){
+  if(!sel)return;
+  fire(updateDoc(docRef('points',sel),Object.assign({},patch,{editedBy:me,editedAt:Date.now()})));
+}
+function deletePoint(){
+  const id=sel;
+  lines.forEach((l,k)=>{if(l.a===id||l.b===id)fire(deleteDoc(docRef('lines',k)))});
+  fire(deleteDoc(docRef('points',id)));
+  closeAll();
+}
+
+/* ---------- list ---------- */
+function enterList(){
+  if(needProject())return;
+  sel=null;mode='list';$('#cross').hidden=true;renderList();draw();
+}
+function renderList(){
+  const arr=[...points.values()].sort((a,b)=>String(a.name).localeCompare(String(b.name),'zh-Hant',{numeric:true}));
+  showSheet('<div class="head"><h2>點位清單（'+arr.length+'）</h2><button class="x" data-act="close" aria-label="關閉">×</button></div>'+
+    (arr.length?'<ul class="list">'+arr.map(p=>'<li><button class="go" data-go="'+esc(p.id)+'"><span class="nm">'+esc(p.name)+'</span><span class="d">'+esc(p.by||'')+' · '+linksOf(p.id).length+' 線</span></button></li>').join('')+'</ul>':'<div class="list"><div class="empty">還沒有點位。按「新增點位」建立第一個。</div></div>'));
+}
+
+/* ---------- events ---------- */
+sheet.addEventListener('click',e=>{
+  const t=e.target.closest('button');if(!t)return;
+  if(t.dataset.rm){toggleLine(sel,t.dataset.rm);return}
+  if(t.dataset.go){const p=points.get(t.dataset.go);if(p){map.setView([p.lat,p.lng],Math.max(map.getZoom(),18));select(p.id)}return}
+  switch(t.dataset.act){
+    case 'close':closeAll();break;
+    case 'gps':{
+      const h=$('#addHint');h.textContent='定位中…';
+      getFix().then(c=>{gpsFix={lat:c.latitude,lng:c.longitude,acc:c.accuracy};showMe(c);map.setView([c.latitude,c.longitude],Math.max(map.getZoom(),19));h.textContent='已取得位置，精度約 ±'+Math.round(c.accuracy)+' m。可直接確認，或移動地圖微調。'})
+        .catch(err=>{h.textContent='沒有取得定位。你仍可移動地圖，讓十字對準位置後確認。';gpsProblem(err)});
+      break}
+    case 'confirmAdd':confirmAdd();break;
+    case 'link':enterLink();break;
+    case 'linkDone':select(sel);break;
+    case 'del':confirmDel=true;fillDetail(false);break;
+    case 'delNo':confirmDel=false;fillDetail(false);break;
+    case 'delYes':deletePoint();break;
+  }
+});
+sheet.addEventListener('change',e=>{
+  const p=points.get(sel);if(!p)return;
+  if(e.target.id==='fName'){const v=e.target.value.trim();if(!v){e.target.value=p.name;return}if(v!==p.name)savePoint({name:v})}
+  if(e.target.id==='fNote'){const v=e.target.value.trim();if(v!==(p.note||''))savePoint({note:v})}
+});
+sheet.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.tagName==='INPUT')e.target.blur()});
+map.on('dragstart',()=>{gpsFix=null});
+map.on('click',()=>{if(mode==='detail'||mode==='list')closeAll()});
+$('#addBtn').addEventListener('click',enterAdd);
+$('#listBtn').addEventListener('click',enterList);
+$('#locBtn').addEventListener('click',()=>{
+  getFix().then(c=>{showMe(c);map.setView([c.latitude,c.longitude],Math.max(map.getZoom(),18));toast('目前位置精度約 ±'+Math.round(c.accuracy)+' m')}).catch(gpsProblem);
+});
+
+/* ---------- login ---------- */
+function setWho(){$('#whoBtn').textContent=me||'登入'}
+function askLogin(){
+  $('#nameIn').value=me;$('#codeIn').value=code;
+  $('#loginCancel').hidden=!(me&&code.length>=6);
+  $('#login').hidden=false;
+  setTimeout(()=>(me?$('#codeIn'):$('#nameIn')).focus(),50);
+}
+$('#whoBtn').addEventListener('click',askLogin);
+$('#loginCancel').addEventListener('click',()=>{$('#login').hidden=true});
+$('#copyLink').addEventListener('click',async()=>{
+  const c=cleanCode($('#codeIn').value);
+  if(c.length<6){toast('請先輸入至少 6 個英數字的專案代碼');return}
+  const url=location.origin+location.pathname+'#'+c;
+  try{await navigator.clipboard.writeText(url);toast('已複製，貼給組員即可直接進入此專案')}
+  catch(e){showInfo('分享連結','<p class="hint" style="word-break:break-all;user-select:all">'+esc(url)+'</p><p class="hint">長按上面的連結即可複製。</p>')}
+});
+$('#loginForm').addEventListener('submit',e=>{
+  e.preventDefault();
+  const n=$('#nameIn').value.trim(),c=cleanCode($('#codeIn').value);
+  if(!n)return;
+  if(c.length<6){toast('專案代碼至少 6 個英數字（可用 - 和 _）');return}
+  const changed=c!==code;
+  me=n;code=c;store.set('cp_name',me);store.set('cp_code',code);
+  try{history.replaceState(null,'',location.pathname+'#'+code)}catch(err){}
+  $('#login').hidden=true;setWho();
+  if(changed||!unsubs.length)startSync();else draw();
+});
+
+/* ---------- sync ---------- */
+function resetLocal(){
+  unsubs.forEach(u=>u());unsubs=[];
+  points.clear();lines.clear();
+  markers.forEach(m=>map.removeLayer(m));markers.clear();
+  polys.forEach(p=>map.removeLayer(p));polys.clear();
+  fitted=false;pending=false;syncErr=false;
+  if(mode!=='idle')closeAll();
+}
+function startSync(){
+  resetLocal();
+  if(!cfgOk||!me||code.length<6){setStatus();return}
+  const onErr=()=>{syncErr=true;setStatus();toast('無法讀取資料庫，請確認 Firestore 規則已貼上並發布')};
+  unsubs.push(onSnapshot(colRef('points'),{includeMetadataChanges:true},snap=>{
+    syncErr=false;pending=snap.metadata.hasPendingWrites;
+    points.clear();
+    snap.docs.forEach(d=>{const v=d.data();if(v&&typeof v.lat==='number'&&typeof v.lng==='number')points.set(d.id,Object.assign({id:d.id},v))});
+    if(!fitted&&points.size){fitted=true;map.fitBounds(L.latLngBounds([...points.values()].map(p=>[p.lat,p.lng])).pad(.3),{maxZoom:19})}
+    draw();
+  },onErr));
+  unsubs.push(onSnapshot(colRef('lines'),snap=>{
+    lines.clear();
+    snap.docs.forEach(d=>{const v=d.data();if(v&&v.a&&v.b)lines.set(d.id,{a:v.a,b:v.b})});
+    draw();
+  },onErr));
+  setStatus();
+}
+setWho();
+setStatus();
+if(!cfgOk)showInfo('尚未設定資料庫','<p class="hint">網頁裡的 Firebase 設定還沒填入。完成設定後，這個畫面就會消失。</p>');
+else if(!me||code.length<6)askLogin();
+else startSync();
+</script>
+</body>
+</html>
