@@ -1,0 +1,667 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+<Document id="root_doc">
+<Schema name="歷年圖根" id="歷年圖根">
+	<SimpleField name="點號" type="string"></SimpleField>
+	<SimpleField name="N" type="float"></SimpleField>
+	<SimpleField name="E" type="float"></SimpleField>
+</Schema>
+<Folder><name>歷年圖根</name>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#歷年圖根">
+		<SimpleData name="點號">EB005</SimpleData>
+		<SimpleData name="N">2597988.081</SimpleData>
+		<SimpleData name="E">194212.695</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>120.453837722664,23.4840235856754</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#歷年圖根">
+		<SimpleData name="點號">EB170</SimpleData>
+		<SimpleData name="N">2597960.865</SimpleData>
+		<SimpleData name="E">194322.124</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>120.454910013997,23.4837815813176</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#歷年圖根">
+		<SimpleData name="點號">EB171</SimpleData>
+		<SimpleData name="N">2597932.432</SimpleData>
+		<SimpleData name="E">194318.816</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>120.454878684939,23.4835247246023</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#歷年圖根">
+		<SimpleData name="點號">EH110</SimpleData>
+		<SimpleData name="N">2597918.606</SimpleData>
+		<SimpleData name="E">194259.767</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>120.454301126594,23.4833978563767</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#歷年圖根">
+		<SimpleData name="點號">EH111</SimpleData>
+		<SimpleData name="N">2597910.565</SimpleData>
+		<SimpleData name="E">194239.187</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>120.454099953628,23.4833245425646</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#歷年圖根">
+		<SimpleData name="點號">EH112</SimpleData>
+		<SimpleData name="N">2597908.496</SimpleData>
+		<SimpleData name="E">194208.286</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>120.453797519508,23.4833048002735</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#歷年圖根">
+		<SimpleData name="點號">EH113</SimpleData>
+		<SimpleData name="N">2597904.301</SimpleData>
+		<SimpleData name="E">194166.512</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>120.453388721409,23.483265486892</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#歷年圖根">
+		<SimpleData name="點號">EH015</SimpleData>
+		<SimpleData name="N">2597869.324</SimpleData>
+		<SimpleData name="E">193611.113</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>120.447952860465,23.4829304921663</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#歷年圖根">
+		<SimpleData name="點號">EH016</SimpleData>
+		<SimpleData name="N">2597894.81</SimpleData>
+		<SimpleData name="E">193694.809</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>120.448771258249,23.4831635242125</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#歷年圖根">
+		<SimpleData name="點號">EH017</SimpleData>
+		<SimpleData name="N">2597972.223</SimpleData>
+		<SimpleData name="E">193693.428</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>120.448754833163,23.4838624973295</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#歷年圖根">
+		<SimpleData name="點號">EH018</SimpleData>
+		<SimpleData name="N">2597988.343</SimpleData>
+		<SimpleData name="E">193799.506</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>120.449792702904,23.4840117260906</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#歷年圖根">
+		<SimpleData name="點號">EH019</SimpleData>
+		<SimpleData name="N">2598014.898</SimpleData>
+		<SimpleData name="E">193906.566</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>120.450839798465,23.484255207437</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#歷年圖根">
+		<SimpleData name="點號">EH020</SimpleData>
+		<SimpleData name="N">2597937.469</SimpleData>
+		<SimpleData name="E">193916.103</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>120.450936058031,23.4835563707161</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#歷年圖根">
+		<SimpleData name="點號">EH048</SimpleData>
+		<SimpleData name="N">2598416.52</SimpleData>
+		<SimpleData name="E">193546.139</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>120.447296194131,23.4878692852207</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#歷年圖根">
+		<SimpleData name="點號">EH049</SimpleData>
+		<SimpleData name="N">2598489.575</SimpleData>
+		<SimpleData name="E">193546.206</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>120.447294100192,23.4885289562123</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#歷年圖根">
+		<SimpleData name="點號">EH050</SimpleData>
+		<SimpleData name="N">2598587.891</SimpleData>
+		<SimpleData name="E">193586.69</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>120.447686742713,23.4894181304989</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#歷年圖根">
+		<SimpleData name="點號">EH051</SimpleData>
+		<SimpleData name="N">2598608.697</SimpleData>
+		<SimpleData name="E">193728.868</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>120.449077902595,23.4896109302394</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#歷年圖根">
+		<SimpleData name="點號">EH052</SimpleData>
+		<SimpleData name="N">2598657.067</SimpleData>
+		<SimpleData name="E">193793.955</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>120.449713300697,23.4900499507426</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#歷年圖根">
+		<SimpleData name="點號">EH053</SimpleData>
+		<SimpleData name="N">2598698.82</SimpleData>
+		<SimpleData name="E">193803.058</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>120.449800856005,23.4904272847675</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#歷年圖根">
+		<SimpleData name="點號">EH054</SimpleData>
+		<SimpleData name="N">2598731.073</SimpleData>
+		<SimpleData name="E">193787.777</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>120.449650042915,23.4907179932058</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#歷年圖根">
+		<SimpleData name="點號">EH055</SimpleData>
+		<SimpleData name="N">2598730.498</SimpleData>
+		<SimpleData name="E">193899.013</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>120.450739089912,23.4907166431118</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#歷年圖根">
+		<SimpleData name="點號">EH056</SimpleData>
+		<SimpleData name="N">2598709.367</SimpleData>
+		<SimpleData name="E">193989.496</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>120.451625728244,23.4905289549122</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#歷年圖根">
+		<SimpleData name="點號">EH057</SimpleData>
+		<SimpleData name="N">2598662.818</SimpleData>
+		<SimpleData name="E">193991.619</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>120.451648251402,23.4901087018416</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#歷年圖根">
+		<SimpleData name="點號">EH058</SimpleData>
+		<SimpleData name="N">2598645.579</SimpleData>
+		<SimpleData name="E">194076.157</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>120.452476536779,23.4899559477127</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#歷年圖根">
+		<SimpleData name="點號">EH059</SimpleData>
+		<SimpleData name="N">2598624.604</SimpleData>
+		<SimpleData name="E">193878.565</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>120.450542862325,23.489759740398</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#歷年圖根">
+		<SimpleData name="點號">EH060</SimpleData>
+		<SimpleData name="N">2598485.718</SimpleData>
+		<SimpleData name="E">193873.188</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>120.450495418472,23.4885054478802</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#歷年圖根">
+		<SimpleData name="點號">EH061</SimpleData>
+		<SimpleData name="N">2598512.305</SimpleData>
+		<SimpleData name="E">193994.138</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>120.451678533777,23.4887496924862</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#歷年圖根">
+		<SimpleData name="點號">EH062</SimpleData>
+		<SimpleData name="N">2598374.608</SimpleData>
+		<SimpleData name="E">194000.479</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>120.451745754028,23.487506539924</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#歷年圖根">
+		<SimpleData name="點號">EH063</SimpleData>
+		<SimpleData name="N">2598302.785</SimpleData>
+		<SimpleData name="E">194023.306</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>120.451971910643,23.4868587812632</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#歷年圖根">
+		<SimpleData name="點號">EH064</SimpleData>
+		<SimpleData name="N">2598261.273</SimpleData>
+		<SimpleData name="E">193961.548</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>120.45136885431,23.4864818107639</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#歷年圖根">
+		<SimpleData name="點號">EH065</SimpleData>
+		<SimpleData name="N">2598219.862</SimpleData>
+		<SimpleData name="E">193856.167</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>120.450338733503,23.4861042445328</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#歷年圖根">
+		<SimpleData name="點號">EH066</SimpleData>
+		<SimpleData name="N">2598169.639</SimpleData>
+		<SimpleData name="E">193786.999</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>120.449663468954,23.4856483534715</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#歷年圖根">
+		<SimpleData name="點號">EH067</SimpleData>
+		<SimpleData name="N">2598121.972</SimpleData>
+		<SimpleData name="E">193631.048</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>120.44813852358,23.4852125339556</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#歷年圖根">
+		<SimpleData name="點號">EH068</SimpleData>
+		<SimpleData name="N">2597998.824</SimpleData>
+		<SimpleData name="E">193688</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>120.448700696039,23.4841025100701</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#歷年圖根">
+		<SimpleData name="點號">EH069</SimpleData>
+		<SimpleData name="N">2598066.776</SimpleData>
+		<SimpleData name="E">193780.583</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>120.449604512437,23.4847193033971</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#歷年圖根">
+		<SimpleData name="點號">EH070</SimpleData>
+		<SimpleData name="N">2598110.15</SimpleData>
+		<SimpleData name="E">193883.745</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>120.450612823349,23.4851145231642</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#歷年圖根">
+		<SimpleData name="點號">EH071</SimpleData>
+		<SimpleData name="N">2598174.143</SimpleData>
+		<SimpleData name="E">194035.162</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>120.452092779987,23.4856975825157</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#歷年圖根">
+		<SimpleData name="點號">EH072</SimpleData>
+		<SimpleData name="N">2598209.895</SimpleData>
+		<SimpleData name="E">194184.478</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>120.453553232191,23.4860255462918</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#歷年圖根">
+		<SimpleData name="點號">EH073</SimpleData>
+		<SimpleData name="N">2598140.74</SimpleData>
+		<SimpleData name="E">194178.688</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>120.453499122317,23.4854008940816</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#歷年圖根">
+		<SimpleData name="點號">EH074</SimpleData>
+		<SimpleData name="N">2598055.379</SimpleData>
+		<SimpleData name="E">194131.053</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>120.453035962648,23.4846284684649</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#歷年圖根">
+		<SimpleData name="點號">EH075</SimpleData>
+		<SimpleData name="N">2598056</SimpleData>
+		<SimpleData name="E">194103.69</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>120.452768061763,23.4846331357336</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#歷年圖根">
+		<SimpleData name="點號">EH076</SimpleData>
+		<SimpleData name="N">2598041.072</SimpleData>
+		<SimpleData name="E">194061.624</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>120.452356801559,23.4844968930688</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#歷年圖根">
+		<SimpleData name="點號">EH077</SimpleData>
+		<SimpleData name="N">2598034.932</SimpleData>
+		<SimpleData name="E">194000.835</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>120.451761920519,23.4844393583434</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#歷年圖根">
+		<SimpleData name="點號">EH078</SimpleData>
+		<SimpleData name="N">2598019.326</SimpleData>
+		<SimpleData name="E">193956.24</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>120.451325929047,23.484296903725</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#歷年圖根">
+		<SimpleData name="點號">EH079</SimpleData>
+		<SimpleData name="N">2597955.216</SimpleData>
+		<SimpleData name="E">194046.993</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>120.45221676977,23.4837211301776</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#歷年圖根">
+		<SimpleData name="點號">EH080</SimpleData>
+		<SimpleData name="N">2597950.612</SimpleData>
+		<SimpleData name="E">193983.352</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>120.451593914677,23.4836773664732</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#歷年圖根">
+		<SimpleData name="點號">EH081</SimpleData>
+		<SimpleData name="N">2597939.499</SimpleData>
+		<SimpleData name="E">193962.236</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>120.451387610336,23.4835762912829</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#歷年圖根">
+		<SimpleData name="點號">EH082</SimpleData>
+		<SimpleData name="N">2597894.013</SimpleData>
+		<SimpleData name="E">193971.275</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>120.451477798231,23.483165874766</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#歷年圖根">
+		<SimpleData name="點號">EH083</SimpleData>
+		<SimpleData name="N">2597838.811</SimpleData>
+		<SimpleData name="E">193978.681</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>120.451552361869,23.4826676687075</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#歷年圖根">
+		<SimpleData name="點號">EH084</SimpleData>
+		<SimpleData name="N">2597846.516</SimpleData>
+		<SimpleData name="E">193829.641</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>120.450093026708,23.4827321028427</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#歷年圖根">
+		<SimpleData name="點號">EH085</SimpleData>
+		<SimpleData name="N">2597880.777</SimpleData>
+		<SimpleData name="E">193815.424</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>120.44995256437,23.4830409805467</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#歷年圖根">
+		<SimpleData name="點號">EH086</SimpleData>
+		<SimpleData name="N">2597908.978</SimpleData>
+		<SimpleData name="E">193810.085</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>120.449899241126,23.4832954444719</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#歷年圖根">
+		<SimpleData name="點號">EH087</SimpleData>
+		<SimpleData name="N">2597909.25</SimpleData>
+		<SimpleData name="E">193777.892</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>120.449584071886,23.483296788058</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#歷年圖根">
+		<SimpleData name="點號">EH088</SimpleData>
+		<SimpleData name="N">2597896.724</SimpleData>
+		<SimpleData name="E">193747.849</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>120.449290430335,23.4831826424658</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#歷年圖根">
+		<SimpleData name="點號">EH092</SimpleData>
+		<SimpleData name="N">2597845.937</SimpleData>
+		<SimpleData name="E">193719.852</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>120.449018254276,23.4827230793803</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#歷年圖根">
+		<SimpleData name="點號">EH114</SimpleData>
+		<SimpleData name="N">2597891.04</SimpleData>
+		<SimpleData name="E">194103.97</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>120.452776949366,23.4831435949691</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#歷年圖根">
+		<SimpleData name="點號">EH115</SimpleData>
+		<SimpleData name="N">2597888.532</SimpleData>
+		<SimpleData name="E">194054.618</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>120.452293903121,23.4831192515002</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#歷年圖根">
+		<SimpleData name="點號">EH116</SimpleData>
+		<SimpleData name="N">2597846.257</SimpleData>
+		<SimpleData name="E">194082.505</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>120.452568483286,23.4827384770498</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#歷年圖根">
+		<SimpleData name="點號">GH2029</SimpleData>
+		<SimpleData name="N">2598685.696</SimpleData>
+		<SimpleData name="E">194128.45</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>120.45298699966,23.4903199923762</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#歷年圖根">
+		<SimpleData name="點號">GH2031</SimpleData>
+		<SimpleData name="N">2598250.177</SimpleData>
+		<SimpleData name="E">194204.202</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>120.453744829446,23.486389960168</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#歷年圖根">
+		<SimpleData name="點號">EB004</SimpleData>
+		<SimpleData name="N">2597976.086</SimpleData>
+		<SimpleData name="E">194115.157</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>120.452883298261,23.4839119250168</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#歷年圖根">
+		<SimpleData name="點號">EB121</SimpleData>
+		<SimpleData name="N">2598075.787</SimpleData>
+		<SimpleData name="E">194200.919</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>120.453719176343,23.4848151465297</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#歷年圖根">
+		<SimpleData name="點號">EB124</SimpleData>
+		<SimpleData name="N">2597999.311</SimpleData>
+		<SimpleData name="E">194063.123</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>120.452373033625,23.4841198525661</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#歷年圖根">
+		<SimpleData name="點號">EB125</SimpleData>
+		<SimpleData name="N">2598645.945</SimpleData>
+		<SimpleData name="E">194163.371</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>120.453330363326,23.4899622499847</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#歷年圖根">
+		<SimpleData name="點號">EC111</SimpleData>
+		<SimpleData name="N">2598728.194</SimpleData>
+		<SimpleData name="E">194065.607</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>120.452370168988,23.4907015783581</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#歷年圖根">
+		<SimpleData name="點號">EC112</SimpleData>
+		<SimpleData name="N">2598749.245</SimpleData>
+		<SimpleData name="E">194149.447</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>120.453190197689,23.4908945459857</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#歷年圖根">
+		<SimpleData name="點號">EH003</SimpleData>
+		<SimpleData name="N">2598405.72</SimpleData>
+		<SimpleData name="E">193487.607</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>120.446723572242,23.4877697307502</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#歷年圖根">
+		<SimpleData name="點號">EH004</SimpleData>
+		<SimpleData name="N">2598216.665</SimpleData>
+		<SimpleData name="E">193512.43</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>120.446973709446,23.4860634729451</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#歷年圖根">
+		<SimpleData name="點號">EH005</SimpleData>
+		<SimpleData name="N">2598072.757</SimpleData>
+		<SimpleData name="E">193566.815</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>120.447511545925,23.4847659067843</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#歷年圖根">
+		<SimpleData name="點號">EH006</SimpleData>
+		<SimpleData name="N">2597983.686</SimpleData>
+		<SimpleData name="E">193580.968</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>120.447653450654,23.4839621081793</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#歷年圖根">
+		<SimpleData name="點號">EH007</SimpleData>
+		<SimpleData name="N">2597918.703</SimpleData>
+		<SimpleData name="E">193503.979</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>120.446902197048,23.4833726548479</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#歷年圖根">
+		<SimpleData name="點號">EH021</SimpleData>
+		<SimpleData name="N">2597833.543</SimpleData>
+		<SimpleData name="E">193945.149</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>120.45122429274,23.4826189446134</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#歷年圖根">
+		<SimpleData name="點號">EH022</SimpleData>
+		<SimpleData name="N">2597834.298</SimpleData>
+		<SimpleData name="E">194011.047</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>120.451869381561,23.4826280318256</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#歷年圖根">
+		<SimpleData name="點號">EH095</SimpleData>
+		<SimpleData name="N">2597820.462</SimpleData>
+		<SimpleData name="E">193889.963</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>120.450684531548,23.4824989234145</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#歷年圖根">
+		<SimpleData name="點號">EH093</SimpleData>
+		<SimpleData name="N">2597826.168</SimpleData>
+		<SimpleData name="E">193751.619</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>120.449329982742,23.4825456688841</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#歷年圖根">
+		<SimpleData name="點號">EH042</SimpleData>
+		<SimpleData name="N">2597797.413</SimpleData>
+		<SimpleData name="E">193835.52</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>120.450152418214,23.4822889173222</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#歷年圖根">
+		<SimpleData name="點號">EH043</SimpleData>
+		<SimpleData name="N">2597778.624</SimpleData>
+		<SimpleData name="E">193736.665</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>120.449185371756,23.4821158405956</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#歷年圖根">
+		<SimpleData name="點號">EH089</SimpleData>
+		<SimpleData name="N">2597831.427</SimpleData>
+		<SimpleData name="E">193655.925</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>120.448392977401,23.4825898442682</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#歷年圖根">
+		<SimpleData name="點號">EH090</SimpleData>
+		<SimpleData name="N">2597832.836</SimpleData>
+		<SimpleData name="E">193688.987</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>120.448716589006,23.4826037121754</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#歷年圖根">
+		<SimpleData name="點號">EH091</SimpleData>
+		<SimpleData name="N">2597835.988</SimpleData>
+		<SimpleData name="E">193707.829</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>120.448900926827,23.4826328262057</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#歷年圖根">
+		<SimpleData name="點號">EH094</SimpleData>
+		<SimpleData name="N">2597804.86</SimpleData>
+		<SimpleData name="E">193807.409</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>120.449876943776,23.4823551910545</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#歷年圖根">
+		<SimpleData name="點號">EH014</SimpleData>
+		<SimpleData name="N">2597822.629</SimpleData>
+		<SimpleData name="E">193612.031</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>120.44796360243,23.4825088792938</coordinates></Point>
+  </Placemark>
+</Folder>
+</Document></kml>
