@@ -1,0 +1,17 @@
+{
+  "id": "./",
+  "name": "控制點選點",
+  "short_name": "控制點選點",
+  "description": "地籍測量組多人即時控制點選點",
+  "lang": "zh-Hant",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0d6b5b",
+  "theme_color": "#0d6b5b",
+  "icons": [
+    {"src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+  ]
+}
