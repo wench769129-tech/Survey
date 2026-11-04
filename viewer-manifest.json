@@ -5,7 +5,7 @@
   "description": "地籍圖與已知點瀏覽、地號查詢、現場註記",
   "lang": "zh-Hant",
   "start_url": "./viewer.html",
-  "scope": "./",
+  "scope": "./viewer",
   "display": "standalone",
   "background_color": "#2b4c7e",
   "theme_color": "#2b4c7e",

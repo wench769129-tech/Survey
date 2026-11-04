@@ -4,7 +4,7 @@
    - NLSC 底圖圖磚：看過才存，全部圖層合計有張數上限，超過刪最舊的
    - Firestore 連線不經過這裡（由 Firebase 自己的離線快取處理）
    改了這個檔才需要把 VER 加一；只改 index.html 不用動。 */
-const VER='v2';
+const VER='v4';  // v4：viewer-manifest 範圍改 ./viewer（Android 才不會開成選點 App）；v3：地籍瀏覽器換圖示與名稱（圖示、manifest 是先用快取）
 const SHELL='cp-shell-'+VER, LIB='cp-lib-'+VER, TILE='cp-tile';
 const NET_WAIT=4000;
 const TILE_MAX_CORS=2000, TILE_MAX_OPAQUE=300; /* 沒有 CORS 的圖磚（opaque）佔配額很大，上限放小 */
