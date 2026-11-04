@@ -1,10 +1,10 @@
 /* 控制點選點 service worker（PWA 離線快取）
-   - 網頁（index.html、viewer.html）與 KML、已知點 CTL、viewer/list.txt：先抓網路（最多等 NET_WAIT 毫秒），失敗或逾時才用快取 → 上傳新版後重新整理就會更新
+   - 網頁（index.html）與 KML：先抓網路（最多等 NET_WAIT 毫秒），失敗或逾時才用快取 → 上傳新版後重新整理就會更新
    - Leaflet、Firebase SDK、字型、圖示：版本固定，先用快取
    - NLSC 底圖圖磚：看過才存，全部圖層合計有張數上限，超過刪最舊的
    - Firestore 連線不經過這裡（由 Firebase 自己的離線快取處理）
    改了這個檔才需要把 VER 加一；只改 index.html 不用動。 */
-const VER='v4';  // v4：viewer-manifest 範圍改 ./viewer（Android 才不會開成選點 App）；v3：地籍瀏覽器換圖示與名稱（圖示、manifest 是先用快取）
+const VER='v5';  // v5：地籍瀏覽器搬到自己的 repo，拿掉 viewer 檔案；v4：viewer-manifest 範圍改 ./viewer（Android 才不會開成選點 App）；v3：地籍瀏覽器換圖示與名稱（圖示、manifest 是先用快取）
 const SHELL='cp-shell-'+VER, LIB='cp-lib-'+VER, TILE='cp-tile';
 const NET_WAIT=4000;
 const TILE_MAX_CORS=2000, TILE_MAX_OPAQUE=300; /* 沒有 CORS 的圖磚（opaque）佔配額很大，上限放小 */
@@ -17,14 +17,14 @@ const LIB_URLS=[
 const LIB_HOSTS=['cdnjs.cloudflare.com','fonts.googleapis.com','fonts.gstatic.com'];
 const SCOPE=self.registration.scope;
 const PAGE_KEY=SCOPE; /* index.html 不論網址怎麼寫都存在同一把 key */
-const ICONS=['manifest.json','icon-192.png','icon-512.png','apple-touch-icon.png','viewer-manifest.json','viewer-icon-192.png','viewer-icon-512.png','viewer-apple-touch-icon.png'];
+const ICONS=['manifest.json','icon-192.png','icon-512.png','apple-touch-icon.png'];
 /* 每個網頁各自一把 key（v2：避免 viewer.html 蓋掉 index.html 的快取） */
 function pageKey(u){const p=u.origin+u.pathname;return(p===SCOPE||p===SCOPE+'index.html')?PAGE_KEY:p}
 
 self.addEventListener('install',e=>{
   e.waitUntil((async()=>{
     const s=await caches.open(SHELL);
-    await Promise.all(['index.html','viewer.html'].concat(ICONS).map(async f=>{
+    await Promise.all(['index.html'].concat(ICONS).map(async f=>{
       try{const r=await fetch(SCOPE+f,{cache:'no-cache'});if(r.ok)await s.put(f==='index.html'?PAGE_KEY:SCOPE+f,r)}catch(err){}
     }));
     const l=await caches.open(LIB);
@@ -49,8 +49,9 @@ self.addEventListener('fetch',e=>{
   const u=new URL(req.url);
   if(req.mode==='navigate'&&req.url.startsWith(SCOPE)){e.respondWith(netFirst(req,pageKey(u)));return}
   if(u.origin===location.origin){
+    if(!req.url.startsWith(SCOPE))return; /* 同網域其他 repo（地籍瀏覽器）不歸這裡管 */
     if(u.pathname.endsWith('/sw.js'))return;
-    if(/\.(kml|ctl)$/i.test(u.pathname)||/\/viewer\/list\.txt$/.test(u.pathname)){e.respondWith(netFirst(req,u.origin+u.pathname));return}
+    if(/\.kml$/i.test(u.pathname)){e.respondWith(netFirst(req,u.origin+u.pathname));return}
     if(ICONS.some(f=>u.pathname.endsWith('/'+f))){e.respondWith(cacheFirst(req,SHELL));return}
     return;
   }
