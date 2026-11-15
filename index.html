@@ -211,8 +211,8 @@ details.grp>summary{cursor:pointer;color:var(--muted);font-size:13px;min-height:
 .r2>.btn{min-width:0}
 .r3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}.r3>.btn,.r3 .btn,.r3>.in{min-width:0}.dc{display:contents}
 .btn.st{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
-.pin.std i{position:relative}
-.pin.std i::before{content:"✓";position:absolute;left:26px;top:7px;width:13px;height:13px;border-radius:50%;background:#2f9e44;color:#fff;font-size:9px;font-weight:700;line-height:13px;text-align:center;box-shadow:0 0 0 1.5px #fff}
+.pin.std:not(.sel):not(.mv) i{background:radial-gradient(circle,transparent 0 8px,#2f9e44 8.5px 13px,transparent 13.5px)}
+.pin.std span,.pin.kn.std span,.pin.kn.rt.std span{background:#2f9e44;color:#fff}
 .stsum{display:flex;align-items:center;gap:10px;font-size:15px}.stsum span{flex:1}.stsum .btn{flex:none;min-width:0;min-height:40px;padding:0 14px;font-size:14px}
 .pbar{height:8px;border-radius:4px;background:var(--line);overflow:hidden}.pbar i{display:block;height:100%;background:#2f9e44}
 .list button.go.obs{gap:10px}.obs .cbx{width:24px;height:24px;border:2px solid var(--muted);border-radius:6px;flex:none;display:grid;place-items:center;color:#fff;font-weight:700;font-size:14px}
@@ -543,7 +543,7 @@ const colRef=c=>collection(fs,'projects',code,c);
 const docRef=(c,id)=>doc(fs,'projects',code,c,id);
 
 /* ---------- map & layers ---------- */
-/* v29.1：點標題只做變動同步，不再整份重讀。v29：讀取省量（subscribe／subKey，寫入 wSet／wUpd／wDel，upd 伺服器時間＋標記刪除）。v28：設站觀測（obs／enterStation／renderStation）、找點（startFind／findBan）、施測進度（obsProgHtml）、施測計畫表（buildPlanCsv）、詳細頁按鈕兩排。v27.1：工作進度圖根三段收合、姓名重複提醒（checkNameDup）、點位清單篩選（lf／lfOk）。v27：歷年圖根納入本次規劃（isTie）、匯出 CSV 連同加密點／圖根（buildCsv extra）、通視線方向與多餘觀測（lnDir／arrowMarker／renderLineSheet）。v26：定位追蹤開著時，新增點位十字直接移到最新位置（enterAdd）。v25：讀取計數見 useHtml／countSnap，重新訂閱門檻 1 分鐘。v24：點號避讓與縮小圈圈見 layoutLabels。v23：最大 zoom 21（底圖原生到 19，20、21 為放大顯示；自動縮放上限不變） */
+/* v29.2：設站完成的點改粗綠外環＋點號綠底白字（.pin.std）。v29.1：點標題只做變動同步，不再整份重讀。v29：讀取省量（subscribe／subKey，寫入 wSet／wUpd／wDel，upd 伺服器時間＋標記刪除）。v28：設站觀測（obs／enterStation／renderStation）、找點（startFind／findBan）、施測進度（obsProgHtml）、施測計畫表（buildPlanCsv）、詳細頁按鈕兩排。v27.1：工作進度圖根三段收合、姓名重複提醒（checkNameDup）、點位清單篩選（lf／lfOk）。v27：歷年圖根納入本次規劃（isTie）、匯出 CSV 連同加密點／圖根（buildCsv extra）、通視線方向與多餘觀測（lnDir／arrowMarker／renderLineSheet）。v26：定位追蹤開著時，新增點位十字直接移到最新位置（enterAdd）。v25：讀取計數見 useHtml／countSnap，重新訂閱門檻 1 分鐘。v24：點號避讓與縮小圈圈見 layoutLabels。v23：最大 zoom 21（底圖原生到 19，20、21 為放大顯示；自動縮放上限不變） */
 const map=L.map('map',{zoomControl:false,center:[23.487,120.471],zoom:16,maxZoom:21});
 map.createPane('lnArrow');map.getPane('lnArrow').style.zIndex=450;map.getPane('lnArrow').style.pointerEvents='none';
 const wmts=k=>L.tileLayer('https://wmts.nlsc.gov.tw/wmts/'+k+'/default/GoogleMapsCompatible/{z}/{y}/{x}',{maxNativeZoom:19,maxZoom:21,attribution:'© 內政部國土測繪中心'});
