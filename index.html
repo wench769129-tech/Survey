@@ -308,7 +308,7 @@ ol.steps{margin:0;padding-left:20px;line-height:1.8;font-size:14px}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script type="module">
 import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
-import {getFirestore,initializeFirestore,persistentLocalCache,collection,doc,setDoc,updateDoc,deleteDoc,onSnapshot,runTransaction,writeBatch,getDocs,query,where} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import {getFirestore,initializeFirestore,persistentLocalCache,collection,doc,setDoc,updateDoc,deleteDoc,onSnapshot,runTransaction,writeBatch,getDocs,query,where,serverTimestamp,getDocsFromCache,Timestamp} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 /* ====== Firebase 設定 ====== */
 const firebaseConfig={
@@ -543,7 +543,7 @@ const colRef=c=>collection(fs,'projects',code,c);
 const docRef=(c,id)=>doc(fs,'projects',code,c,id);
 
 /* ---------- map & layers ---------- */
-/* v28：設站觀測（obs／enterStation／renderStation）、找點（startFind／findBan）、施測進度（obsProgHtml）、施測計畫表（buildPlanCsv）、詳細頁按鈕兩排。v27.1：工作進度圖根三段收合、姓名重複提醒（checkNameDup）、點位清單篩選（lf／lfOk）。v27：歷年圖根納入本次規劃（isTie）、匯出 CSV 連同加密點／圖根（buildCsv extra）、通視線方向與多餘觀測（lnDir／arrowMarker／renderLineSheet）。v26：定位追蹤開著時，新增點位十字直接移到最新位置（enterAdd）。v25：讀取計數見 useHtml／countSnap，重新訂閱門檻 1 分鐘。v24：點號避讓與縮小圈圈見 layoutLabels。v23：最大 zoom 21（底圖原生到 19，20、21 為放大顯示；自動縮放上限不變） */
+/* v29.1：點標題只做變動同步，不再整份重讀。v29：讀取省量（subscribe／subKey，寫入 wSet／wUpd／wDel，upd 伺服器時間＋標記刪除）。v28：設站觀測（obs／enterStation／renderStation）、找點（startFind／findBan）、施測進度（obsProgHtml）、施測計畫表（buildPlanCsv）、詳細頁按鈕兩排。v27.1：工作進度圖根三段收合、姓名重複提醒（checkNameDup）、點位清單篩選（lf／lfOk）。v27：歷年圖根納入本次規劃（isTie）、匯出 CSV 連同加密點／圖根（buildCsv extra）、通視線方向與多餘觀測（lnDir／arrowMarker／renderLineSheet）。v26：定位追蹤開著時，新增點位十字直接移到最新位置（enterAdd）。v25：讀取計數見 useHtml／countSnap，重新訂閱門檻 1 分鐘。v24：點號避讓與縮小圈圈見 layoutLabels。v23：最大 zoom 21（底圖原生到 19，20、21 為放大顯示；自動縮放上限不變） */
 const map=L.map('map',{zoomControl:false,center:[23.487,120.471],zoom:16,maxZoom:21});
 map.createPane('lnArrow');map.getPane('lnArrow').style.zIndex=450;map.getPane('lnArrow').style.pointerEvents='none';
 const wmts=k=>L.tileLayer('https://wmts.nlsc.gov.tw/wmts/'+k+'/default/GoogleMapsCompatible/{z}/{y}/{x}',{maxNativeZoom:19,maxZoom:21,attribution:'© 內政部國土測繪中心'});
@@ -703,7 +703,16 @@ const fmtTime=t=>t?new Date(t).toLocaleString('zh-TW',{hour12:false,month:'numer
 function nameTaken(name,exceptId){const u=String(name).trim().toUpperCase();for(const [id,p] of points){if(id!==exceptId&&String(p.name).trim().toUpperCase()===u)return true}return false}
 function linksOf(id){const out=[];lines.forEach((l,k)=>{if(l.a===id&&getPt(l.b))out.push({k,other:l.b});else if(l.b===id&&getPt(l.a))out.push({k,other:l.a})});return out}
 let tt;function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('on'),3800)}
-const fire=p=>p.catch(()=>toast('寫入失敗，請確認網路與資料庫規則'));
+let pendN=0;
+const fire=p=>{pendN++;pending=true;setStatus();return p.catch(()=>toast('寫入失敗，請確認網路與資料庫規則')).finally(()=>{pendN--;pending=pendN>0;setStatus()})};
+/* v29：points／lines／rootStat／obs 每次寫入都帶伺服器時間 upd；刪除改成標記刪除 {del:true}，別台裝置才收得到。
+   wSet／wUpd／wDel 同時先改本機資料（離線也立刻看得到） */
+const U=o=>Object.assign({},o,{upd:serverTimestamp()});
+const TOMB=()=>({del:true,upd:serverTimestamp()});
+let drawQ=0;function drawSoon(){if(!drawQ)drawQ=requestAnimationFrame(()=>{drawQ=0;draw()})}
+function wSet(k,id,data){applyDoc(k,id,data);drawSoon();return fire(setDoc(docRef(k,id),U(data)))}
+function wUpd(k,id,patch){const m=mapOf(k),cur=m&&m.get(id);if(cur)Object.assign(cur,patch);drawSoon();return fire(updateDoc(docRef(k,id),U(patch)))}
+function wDel(k,id){applyDoc(k,id,null);drawSoon();return fire(setDoc(docRef(k,id),TOMB()))}
 function showInfo(title,html){$('#infoTitle').textContent=title;$('#infoBody').innerHTML=html;$('#info').hidden=false}
 $('#infoOk').addEventListener('click',()=>{$('#info').hidden=true});
 const tmLine=p=>{const t=toTM2(p.lat,p.lng);return 'N '+t.N.toFixed(3)+'　E '+t.E.toFixed(3)};
@@ -1115,7 +1124,7 @@ async function createPoint(name,data){
     const nref=docRef('names',nameKey(name)),s=await t.get(nref);
     if(s.exists())throw {code:'dup'};
     t.set(nref,{pid,at:Date.now()});
-    t.set(docRef('points',pid),data);
+    t.set(docRef('points',pid),U(data));
   });
   return pid;
 }
@@ -1127,7 +1136,7 @@ async function renamePoint(pid,newName){
     if(ns.exists()&&ns.data().pid!==pid)throw {code:'dup'};
     t.set(nref,{pid,at:Date.now()});
     if(os.exists()&&os.data().pid===pid&&nameKey(old)!==nameKey(newName))t.delete(oref);
-    t.update(docRef('points',pid),{name:newName,editedBy:me,editedAt:Date.now()});
+    t.update(docRef('points',pid),U({name:newName,editedBy:me,editedAt:Date.now()}));
   });
 }
 function txFail(err){
@@ -1255,16 +1264,16 @@ function renderStation(first){
     (n?'<span class="label">點一列就打勾（再點一次取消）</span><ul class="list">'+rows.map(r=>{const o=getPt(r.t);
       return '<li><button class="go obs'+(r.o?' on':'')+'" data-act="obsT" data-t="'+esc(r.t)+'"><span class="cbx">'+(r.o?'✓':'')+'</span><span class="nm">'+esc(o.name)+(isK(r.t)?' <small>（'+catName(r.t)+'）</small>':'')+(r.o?'<br><small class="who">'+esc(r.o.by||'?')+' '+fmtTime(r.o.at)+'</small>':'')+'</span><span class="d">'+fmtDist(distM(p,o))+'<br>方位 '+fmtAz(azTM(p,o))+'</span></button></li>'}).join('')+'</ul>'
       :'<div class="list"><div class="empty">這個點沒有要在這站觀測的通視線。</div></div>')+
-    '<p class="hint">依 BI → HI → 自訂 → 加密點 → 圖根、點號小的排前面，打勾的移到最下面。方位角用 TWD97 座標算的概略值（從正北順時針）。'+(nIn?'另有 '+nIn+' 條單向線只看得過來，不在這站觀測，所以不列。':'')+'</p>');
+    '<p class="hint">距離、方位角為概略值。'+(nIn?'另有 '+nIn+' 條單向只看得過來，不列。':'')+'</p>');
   sheet.scrollTop=st0;
 }
 function obsToggle(t){
   if(!stId)return;const k=obsKey(stId,t),c=stCnt(stId);
-  if(obs.has(k))fire(deleteDoc(docRef('obs',k)));
-  else{fire(setDoc(docRef('obs',k),{s:stId,t,by:me,at:Date.now()}));if(c.d+1===c.n)toast(getPt(stId).name+' 設站完成 ✓')}
+  if(obs.has(k))wDel('obs',k);
+  else{wSet('obs',k,{s:stId,t,by:me,at:Date.now()});if(c.d+1===c.n)toast(getPt(stId).name+' 設站完成 ✓')}
 }
 async function obsAll(){
-  if(!stId)return;const now=Date.now(),ops=stDirs(stId).filter(t=>!obs.has(obsKey(stId,t))).map(t=>b=>b.set(docRef('obs',obsKey(stId,t)),{s:stId,t,by:me,at:now}));
+  if(!stId)return;const now=Date.now(),ops=stDirs(stId).filter(t=>!obs.has(obsKey(stId,t))).map(t=>b=>b.set(docRef('obs',obsKey(stId,t)),U({s:stId,t,by:me,at:now})));
   if(!ops.length)return;const nm=getPt(stId).name;
   try{await commitChunks(ops,400);toast(nm+' 設站完成 ✓')}catch(e){toast('寫入失敗，請確認網路與資料庫規則')}
 }
@@ -1272,7 +1281,7 @@ async function obsNone(){
   if(!stId)return;
   if(!stArm){stArm=true;renderStation(false);clearTimeout(stArmT);stArmT=setTimeout(()=>{if(stArm){stArm=false;if(mode==='station')renderStation(false)}},4000);return}
   stArm=false;clearTimeout(stArmT);
-  const ops=[...obs.values()].filter(o=>o.s===stId).map(o=>b=>b.delete(docRef('obs',obsKey(o.s,o.t))));
+  const ops=[...obs.values()].filter(o=>o.s===stId).map(o=>b=>b.set(docRef('obs',obsKey(o.s,o.t)),TOMB()));
   try{await commitChunks(ops,400);toast('已取消 '+getPt(stId).name+' 的全部觀測紀錄')}catch(e){toast('寫入失敗，請確認網路與資料庫規則')}
   renderStation(false);
 }
@@ -1318,12 +1327,12 @@ function setLineKind(k,kind){
   const l=lines.get(k);if(!l)return;
   const dir=kind==='xab'?'ab':kind==='xba'?'ba':'',ex=kind!=='n';
   if(!!l.ex===ex&&lnDir(l)===dir)return;
-  fire(updateDoc(docRef('lines',k),{ex,dir,editedBy:me,editedAt:Date.now()}));
+  wUpd('lines',k,{ex,dir,editedBy:me,editedAt:Date.now()});
 }
 function toggleLine(a,b){
   const k=lineKey(a,b),ref=docRef('lines',k);
-  if(lines.has(k))fire(deleteDoc(ref));
-  else fire(setDoc(ref,{a,b,by:me,at:Date.now()}));
+  if(lines.has(k))wDel('lines',k);
+  else wSet('lines',k,{a,b,by:me,at:Date.now()});
 }
 function onPin(id){
   if(mode==='link'&&sel&&id!==sel){toggleLine(sel,id);return}
@@ -1333,28 +1342,29 @@ function onPin(id){
 function saveRootStat(st,note){
   if(!sel||!isRoot(sel))return;
   const ref=docRef('rootStat',sel),r=rstat.get(sel),tie=!st&&!!(r&&r.tie);
-  if(!st&&!tie)fire(deleteDoc(ref));
-  else fire(setDoc(ref,Object.assign({st:st||'',note:st?(note||''):'',by:me,at:Date.now()},tie?{tie:true,tieBy:r.tieBy||me,tieAt:r.tieAt||Date.now()}:{})));
+  if(!st&&!tie)wDel('rootStat',sel);
+  else wSet('rootStat',sel,(Object.assign({st:st||'',note:st?(note||''):'',by:me,at:Date.now()},tie?{tie:true,tieBy:r.tieBy||me,tieAt:r.tieAt||Date.now()}:{})));
 }
 function saveRootTie(on){
   if(!sel||!isRoot(sel)||rootSt(sel))return;
   const ref=docRef('rootStat',sel);
-  if(!on)fire(deleteDoc(ref));
-  else fire(setDoc(ref,{st:'',note:'',tie:true,tieBy:me,tieAt:Date.now(),by:me,at:Date.now()}));
+  if(!on)wDel('rootStat',sel);
+  else wSet('rootStat',sel,{st:'',note:'',tie:true,tieBy:me,tieAt:Date.now(),by:me,at:Date.now()});
 }
 function savePoint(patch){
   if(!sel||isK(sel))return Promise.resolve();
-  return fire(updateDoc(docRef('points',sel),Object.assign({},patch,{editedBy:me,editedAt:Date.now()})));
+  return wUpd('points',sel,Object.assign({},patch,{editedBy:me,editedAt:Date.now()}));
 }
 function movePoint(id,lat,lng){
-  fire(updateDoc(docRef('points',id),{lat,lng,acc:null,src:'manual',editedBy:me,editedAt:Date.now()}));
+  wUpd('points',id,{lat,lng,acc:null,src:'manual',editedBy:me,editedAt:Date.now()});
   toast('已更新位置：TWD97 '+tmText({lat,lng}));
 }
 function deletePoint(){
   const id=sel,k=isK(id),p=getPt(id);
-  lines.forEach((l,key)=>{if(l.a===id||l.b===id)fire(deleteDoc(docRef('lines',key)))});
+  [...lines.entries()].forEach(([key,l])=>{if(l.a===id||l.b===id)wDel('lines',key)});
+  [...obs.values()].forEach(o=>{if(o.s===id||o.t===id)wDel('obs',obsKey(o.s,o.t))});
   if(k)fire(deleteDoc(docRef('known',id)));
-  else{fire(deleteDoc(docRef('points',id)));if(p)fire(deleteDoc(docRef('names',nameKey(p.name))))}
+  else{wDel('points',id);if(p)fire(deleteDoc(docRef('names',nameKey(p.name))))}
   closeAll();
 }
 function openRename(){
@@ -1399,7 +1409,7 @@ async function applyPos(){
   let lat,lng;
   if(posSys==='tm'){const r=fromTM2(a,b);lat=r.lat;lng=r.lng}else{lat=a;lng=b}
   if(!inTaiwan(lat,lng)){msg.textContent='座標超出台灣本島範圍（TWD97 為 121°E 二度分帶）。請確認 N、E 沒有填反。';msg.className='msg bad';return}
-  await fire(updateDoc(docRef('points',id),{lat,lng,acc:null,src:'manual',editedBy:me,editedAt:Date.now()}));
+  await wUpd('points',id,{lat,lng,acc:null,src:'manual',editedBy:me,editedAt:Date.now()});
   posId=null;renderList();toast('座標已更新');
 }
 
@@ -1599,11 +1609,11 @@ async function doCsv(){
   const now=Date.now();let nNew=0,nOver=0;
   const ops=r.points.map(p=>{
     const id=byKey.get(p.name.trim().toUpperCase());
-    if(id){nOver++;return b=>b.update(docRef('points',id),Object.assign({lat:p.lat,lng:p.lng,acc:null,src:'import',mark:p.mark,editedBy:me,editedAt:now},r.hasNote?{note:p.note}:{}))}
+    if(id){nOver++;return b=>b.update(docRef('points',id),U(Object.assign({lat:p.lat,lng:p.lng,acc:null,src:'import',mark:p.mark,editedBy:me,editedAt:now},r.hasNote?{note:p.note}:{})))}
     nNew++;
     return b=>{
       const pid=doc(colRef('points')).id;
-      b.set(docRef('points',pid),{name:p.name.trim(),lat:p.lat,lng:p.lng,acc:null,src:'import',mark:p.mark,note:p.note,by:me,at:now,editedBy:me,editedAt:now});
+      b.set(docRef('points',pid),U({name:p.name.trim(),lat:p.lat,lng:p.lng,acc:null,src:'import',mark:p.mark,note:p.note,by:me,at:now,editedBy:me,editedAt:now}));
       b.set(docRef('names',nameKey(p.name)),{pid,at:now});
     };
   });
@@ -1633,7 +1643,7 @@ async function importLines(text){
   const pts=[];points.forEach((p,id)=>pts.push({id,name:p.name,lat:p.lat,lng:p.lng}));known.forEach((p,id)=>pts.push({id,name:p.name,lat:p.lat,lng:p.lng}));
   const m=matchLines(r.lines,pts,0.5),seen=new Set(),now=Date.now();let dup=0;
   const ops=[];
-  m.pairs.forEach(q=>{const k=lineKey(q.a,q.b);if(lines.has(k)||seen.has(k)){dup++;return}seen.add(k);const at=kmlLineAttr(q);ops.push(b=>b.set(docRef('lines',k),Object.assign({a:q.a,b:q.b,by:me,at:now},at)))});
+  m.pairs.forEach(q=>{const k=lineKey(q.a,q.b);if(lines.has(k)||seen.has(k)){dup++;return}seen.add(k);const at=kmlLineAttr(q);ops.push(b=>b.set(docRef('lines',k),U(Object.assign({a:q.a,b:q.b,by:me,at:now},at))))});
   busy=true;setImpMsg('匯入通視線中…');
   try{
     await commitChunks(ops,400);
@@ -1747,7 +1757,7 @@ async function importFile(kind,file){
       });
       const ops=add.map(p=>b=>{
         const pid=doc(colRef('points')).id;
-        b.set(docRef('points',pid),{name:p.name.trim(),lat:p.lat,lng:p.lng,acc:null,src:'import',mark:DEF_MARK,note:'',by:me,at:now,editedBy:me,editedAt:now});
+        b.set(docRef('points',pid),U({name:p.name.trim(),lat:p.lat,lng:p.lng,acc:null,src:'import',mark:DEF_MARK,note:'',by:me,at:now,editedBy:me,editedAt:now}));
         b.set(docRef('names',nameKey(p.name)),{pid,at:now});
       });
       setImpMsg('匯入新設點中…');
@@ -1815,7 +1825,7 @@ sheet.addEventListener('click',e=>{
     case 'lineDel':confirmLineDel=true;renderLineSheet();break;
     case 'lnKind':if(selLine)setLineKind(selLine,t.dataset.k);break;
     case 'lineDelNo':confirmLineDel=false;renderLineSheet();break;
-    case 'lineDelYes':{const k=selLine;closeAll();if(k)fire(deleteDoc(docRef('lines',k)));toast('已刪除通視線');break}
+    case 'lineDelYes':{const k=selLine;closeAll();if(k)wDel('lines',k);toast('已刪除通視線');break}
     case 'expCsv':exportCsv();break;
     case 'csvYes':doCsv();break;
     case 'csvNo':pendCsv=null;setImpMsg('已取消 CSV 匯入。');renderLayers();break;
@@ -2052,7 +2062,7 @@ function resetLocal(){
   points.clear();lines.clear();rstat.clear();obs.clear();
   markers.forEach(m=>map.removeLayer(m));markers.clear();
   polys.forEach(dropPoly);polys.clear();
-  fitted=false;pending=false;syncErr=false;
+  fitted=false;pending=false;pendN=0;syncErr=false;
   if(mode!=='idle')closeAll();
 }
 function startSync(){resetLocal();subscribe('open')}
@@ -2090,7 +2100,7 @@ async function useUpload(force){
   if(!useDirty||!code||!me||!cfgOk)return;
   if(!force&&Date.now()-useUpAt<USE_MIN)return;
   const u=useCur();useDirty=false;useUpAt=Date.now();
-  try{await setDoc(doc(fs,'projects',code,'usage',u.day+'_'+devId),{day:u.day,name:me,dev:devId,open:u.open,resume:u.resume,edit:u.edit,at:Date.now()})}catch(e){useDirty=true}
+  try{await setDoc(doc(fs,'projects',code,'usage',u.day+'_'+devId),{day:u.day,name:me,dev:devId,ver:APP_VER,open:u.open,resume:u.resume,edit:u.edit,at:Date.now()})}catch(e){useDirty=true}
 }
 setInterval(()=>{if(!document.hidden)useUpload(false)},60*1000);
 async function loadUse(){
@@ -2107,48 +2117,91 @@ function useHtml(){
     '<div class="hint">Firebase 免費讀取每日上限 5 萬次，全組共用。這裡只記讀取筆數，用來看會不會超過上限，不記錄位置或操作內容。數字為網頁估算，可能和 Firebase 後台略有出入。</div>';
   if(!useRows)return head+'<div class="hint">讀取中…</div></div>';
   const u=useCur(),by=new Map();
-  useRows.filter(r=>r&&r.day===u.day&&r.dev!==devId).concat([{name:me,dev:devId,open:u.open,resume:u.resume,edit:u.edit}]).forEach(r=>{
-    const k=String(r.name||'?');const o=by.get(k)||{open:0,resume:0,edit:0,devs:new Set()};
+  useRows.filter(r=>r&&r.day===u.day&&r.dev!==devId).concat([{name:me,dev:devId,ver:APP_VER,open:u.open,resume:u.resume,edit:u.edit}]).forEach(r=>{
+    const k=String(r.name||'?');const o=by.get(k)||{open:0,resume:0,edit:0,devs:new Set(),old:false};if(!(+r.ver>=29))o.old=true;
     o.open+=+r.open||0;o.resume+=+r.resume||0;o.edit+=+r.edit||0;if(r.dev)o.devs.add(r.dev);by.set(k,o)});
   const rows=[...by.entries()].map(([n,o])=>({n,o,t:o.open+o.resume+o.edit})).filter(r=>r.t>0||r.n===me).sort((a,b)=>b.t-a.t);
   const tot=rows.reduce((a,r)=>a+r.t,0),f=n=>n.toLocaleString();
   return head+(useErr?'<div class="bad2">無法讀取其他人的紀錄，下面只有這台裝置</div>':'')+
     '<table class="usetb"><tr><th>姓名</th><th>開網頁</th><th>回前景</th><th>有人修改</th><th>合計</th></tr>'+
-    rows.map(r=>'<tr><td>'+esc(r.n)+(r.o.devs.size>1?'（'+r.o.devs.size+' 台）':'')+'</td><td>'+f(r.o.open)+'</td><td>'+f(r.o.resume)+'</td><td>'+f(r.o.edit)+'</td><td>'+f(r.t)+'</td></tr>').join('')+
+    rows.map(r=>'<tr><td>'+esc(r.n)+(r.o.devs.size>1?'（'+r.o.devs.size+' 台）':'')+(r.o.old?'<b style="color:var(--danger)">（舊版）</b>':'')+'</td><td>'+f(r.o.open)+'</td><td>'+f(r.o.resume)+'</td><td>'+f(r.o.edit)+'</td><td>'+f(r.t)+'</td></tr>').join('')+
     '<tr class="tot"><td colspan="5">全組合計 '+f(tot)+'／'+f(USE_CAP)+'（'+Math.round(tot/USE_CAP*100)+'%）</td></tr></table></div>';
 }
 /* 重新建立即時監聽（不清除畫面）：回到前景、恢復網路或手動點狀態列時使用 */
+/* v29：讀取省量。每個集合：
+   - 整份模式（這台裝置今天第一次、沒有同步時間）：一般監聽，讀全部，順便幫沒有 upd 的舊資料補時間。
+   - 變動模式（其他時候，含點標題；v29.1 起點標題不再整份）：先用手機快取畫出來（不算讀取），再只監聽 upd 比上次同步晚的資料。
+   同步時間存 localStorage cp_wm_<專案>_<集合>（伺服器時間 秒:奈秒），每日整份記在 cp_full_<專案>_<集合>。 */
+const APP_VER=29,SYNC_KEYS=['points','rootStat','lines','obs'];
+let forceFull=false,subGen=0;
+const mapOf=k=>k==='points'?points:k==='lines'?lines:k==='rootStat'?rstat:k==='obs'?obs:null;
+function applyDoc(k,id,v){
+  const m=mapOf(k);if(!m)return;
+  if(!v||v.del){m.delete(id);return}
+  if(k==='points'){if(typeof v.lat==='number'&&typeof v.lng==='number')m.set(id,Object.assign({id},v));else m.delete(id)}
+  else if(k==='rootStat'){if(v.st||v.tie)m.set(id,v);else m.delete(id)}
+  else if(k==='obs'){if(v.s&&v.t)m.set(id,v);else m.delete(id)}
+  else if(k==='lines'){if(v.a&&v.b){const dir=(v.dir==='ab'||v.dir==='ba')?v.dir:'';m.set(id,{a:v.a,b:v.b,dir,ex:!!(v.ex||dir),by:v.by||'',at:v.at||0,editedBy:v.editedBy||'',editedAt:v.editedAt||0})}else m.delete(id)}
+}
+function afterPoints(){
+  /* 拖曳中或等待確認的點，畫面維持在新位置（尚未寫入） */
+  const mv=pendMove?{id:pendMove.id,ll:pendMove.n}:(lp&&lp.moving&&lp.cur)?{id:lp.id,ll:lp.cur}:null;
+  if(mv){const q=points.get(mv.id);if(q){q.lat=mv.ll.lat;q.lng=mv.ll.lng}}
+  if(!fitted&&points.size){fitted=true;map.fitBounds(L.latLngBounds([...points.values()].map(p=>[p.lat,p.lng])).pad(.3),{maxZoom:19})}
+}
+const wmKey=k=>'cp_wm_'+code+'_'+k,fullKey=k=>'cp_full_'+code+'_'+k;
+/* 同步時間存精確的伺服器時間（秒:奈秒），查詢用「大於」：同一批寫入的時間完全相同，會在同一份結果一起收到 */
+const updTs=v=>v&&v.upd&&typeof v.upd.seconds==='number'?[v.upd.seconds,v.upd.nanoseconds||0]:null;
+const tsCmp=(a,b)=>a[0]-b[0]||a[1]-b[1];
+const wmGet=k=>{const m=/^(\d+):(\d+)$/.exec(store.get(wmKey(k))||'');return m?[+m[1],+m[2]]:null};
 function subscribe(why){
   unsubs.forEach(u=>u());unsubs=[];
-  subWhy=why==='open'?'open':'resume';subFirst.clear();['points','rootStat','lines','obs'].forEach(k=>subFirst.add(k));
+  const gen=++subGen,full0=forceFull;forceFull=false;
+  subWhy=why==='open'?'open':'resume';subFirst.clear();SYNC_KEYS.forEach(k=>subFirst.add(k));
   if(!cfgOk||!me||code.length<6){setStatus();return}
   const onErr=()=>{syncErr=true;setStatus();toast('無法讀取資料庫，請確認 Firestore 規則已貼上並發布')};
-  unsubs.push(onSnapshot(colRef('points'),{includeMetadataChanges:true},snap=>{
-    syncErr=false;pending=snap.metadata.hasPendingWrites;countSnap(snap,'points');
-    points.clear();
-    snap.docs.forEach(d=>{const v=d.data();if(v&&typeof v.lat==='number'&&typeof v.lng==='number')points.set(d.id,Object.assign({id:d.id},v))});
-    /* 拖曳中或等待確認的點，畫面維持在新位置（尚未寫入） */
-    const mv=pendMove?{id:pendMove.id,ll:pendMove.n}:(lp&&lp.moving&&lp.cur)?{id:lp.id,ll:lp.cur}:null;
-    if(mv){const q=points.get(mv.id);if(q){q.lat=mv.ll.lat;q.lng=mv.ll.lng}}
-    if(!fitted&&points.size){fitted=true;map.fitBounds(L.latLngBounds([...points.values()].map(p=>[p.lat,p.lng])).pad(.3),{maxZoom:19})}
-    draw();
-  },onErr));
-  unsubs.push(onSnapshot(colRef('rootStat'),snap=>{
-    countSnap(snap,'rootStat');rstat.clear();
-    snap.docs.forEach(d=>{const v=d.data();if(v&&(v.st||v.tie))rstat.set(d.id,v)});
-    draw();
-  },onErr));
-  unsubs.push(onSnapshot(colRef('obs'),snap=>{
-    countSnap(snap,'obs');obs.clear();
-    snap.docs.forEach(d=>{const v=d.data();if(v&&v.s&&v.t)obs.set(d.id,v)});
-    draw();
-  },onErr));
-  unsubs.push(onSnapshot(colRef('lines'),snap=>{
-    countSnap(snap,'lines');lines.clear();
-    snap.docs.forEach(d=>{const v=d.data();if(v&&v.a&&v.b){const dir=(v.dir==='ab'||v.dir==='ba')?v.dir:'';lines.set(d.id,{a:v.a,b:v.b,dir,ex:!!(v.ex||dir),by:v.by||'',at:v.at||0,editedBy:v.editedBy||'',editedAt:v.editedAt||0})}});
-    draw();
-  },onErr));
+  SYNC_KEYS.forEach(k=>subKey(k,gen,full0,onErr));
   setStatus();
+}
+async function subKey(k,gen,full0,onErr){
+  const wm=wmGet(k),today=useDay();
+  let full=full0||!wm||store.get(fullKey(k))!==today;
+  if(!full){
+    try{const cs=await getDocsFromCache(colRef(k));if(gen!==subGen)return;cs.docs.forEach(d=>applyDoc(k,d.id,d.data()));if(k==='points')afterPoints();draw()}
+    catch(e){full=true}
+    if(gen!==subGen)return;
+  }
+  let first=true;
+  const saveWm=snap=>{
+    if(snap.metadata.fromCache)return;
+    let mx=wmGet(k);
+    snap.docChanges().forEach(c=>{if(!c.doc.metadata.hasPendingWrites){const t=updTs(c.doc.data());if(t&&(!mx||tsCmp(t,mx)>0))mx=t}});
+    if(!mx)mx=[Math.floor(Date.now()/1000)-86400,0];
+    store.set(wmKey(k),mx[0]+':'+mx[1]);
+  };
+  const q=full?colRef(k):query(colRef(k),where('upd','>',new Timestamp(wm[0],wm[1])));
+  unsubs.push(onSnapshot(q,{includeMetadataChanges:k==='points'},snap=>{
+    if(gen!==subGen)return;
+    syncErr=false;
+    if(!snap.metadata.hasPendingWrites||snap.docChanges().length)countSnap(snap,k);
+    if(full&&first){
+      /* 整份：用伺服器（或快取）結果重建，去掉已不存在的 */
+      const m=mapOf(k);m.clear();snap.docs.forEach(d=>applyDoc(k,d.id,d.data()));
+    }else snap.docChanges().forEach(c=>{
+      if(c.type==='removed'){if(full)applyDoc(k,c.doc.id,null);return} /* 變動模式：離開查詢只代表自己有未送出的修改，不動本機資料 */
+      applyDoc(k,c.doc.id,c.doc.data());
+    });
+    if(full&&!snap.metadata.fromCache){
+      if(first||!store.get(fullKey(k)))store.set(fullKey(k),today);
+      /* 一次性：幫沒有 upd 的舊資料補上伺服器時間 */
+      if(first&&navigator.onLine){const miss=snap.docs.filter(d=>{const v=d.data();return v&&!v.del&&!v.upd&&!d.metadata.hasPendingWrites});
+        if(miss.length)commitChunks(miss.map(d=>b=>b.update(docRef(k,d.id),{upd:serverTimestamp()})),400).catch(()=>{})}
+    }
+    if(!snap.metadata.fromCache)first=false;else if(full&&first){/* 快取先到：之後伺服器結果再重建一次 */}
+    saveWm(snap);
+    if(k==='points')afterPoints();
+    draw();
+  },onErr));
 }
 let hiddenAt=0;
 /* v25：背景超過 1 分鐘才重新訂閱（原 15 秒；短暫切走交給 Firebase 自己重連，省讀取） */
