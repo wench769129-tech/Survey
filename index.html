@@ -543,7 +543,7 @@ const colRef=c=>collection(fs,'projects',code,c);
 const docRef=(c,id)=>doc(fs,'projects',code,c,id);
 
 /* ---------- map & layers ---------- */
-/* v29.2：設站完成的點改粗綠外環＋點號綠底白字（.pin.std）。v29.1：點標題只做變動同步，不再整份重讀。v29：讀取省量（subscribe／subKey，寫入 wSet／wUpd／wDel，upd 伺服器時間＋標記刪除）。v28：設站觀測（obs／enterStation／renderStation）、找點（startFind／findBan）、施測進度（obsProgHtml）、施測計畫表（buildPlanCsv）、詳細頁按鈕兩排。v27.1：工作進度圖根三段收合、姓名重複提醒（checkNameDup）、點位清單篩選（lf／lfOk）。v27：歷年圖根納入本次規劃（isTie）、匯出 CSV 連同加密點／圖根（buildCsv extra）、通視線方向與多餘觀測（lnDir／arrowMarker／renderLineSheet）。v26：定位追蹤開著時，新增點位十字直接移到最新位置（enterAdd）。v25：讀取計數見 useHtml／countSnap，重新訂閱門檻 1 分鐘。v24：點號避讓與縮小圈圈見 layoutLabels。v23：最大 zoom 21（底圖原生到 19，20、21 為放大顯示；自動縮放上限不變） */
+/* v29.3：施測進度只留設站完成（obsProg／obsProgHtml）。v29.2：設站完成的點改粗綠外環＋點號綠底白字（.pin.std）。v29.1：點標題只做變動同步，不再整份重讀。v29：讀取省量（subscribe／subKey，寫入 wSet／wUpd／wDel，upd 伺服器時間＋標記刪除）。v28：設站觀測（obs／enterStation／renderStation）、找點（startFind／findBan）、施測進度（obsProgHtml）、施測計畫表（buildPlanCsv）、詳細頁按鈕兩排。v27.1：工作進度圖根三段收合、姓名重複提醒（checkNameDup）、點位清單篩選（lf／lfOk）。v27：歷年圖根納入本次規劃（isTie）、匯出 CSV 連同加密點／圖根（buildCsv extra）、通視線方向與多餘觀測（lnDir／arrowMarker／renderLineSheet）。v26：定位追蹤開著時，新增點位十字直接移到最新位置（enterAdd）。v25：讀取計數見 useHtml／countSnap，重新訂閱門檻 1 分鐘。v24：點號避讓與縮小圈圈見 layoutLabels。v23：最大 zoom 21（底圖原生到 19，20、21 為放大顯示；自動縮放上限不變） */
 const map=L.map('map',{zoomControl:false,center:[23.487,120.471],zoom:16,maxZoom:21});
 map.createPane('lnArrow');map.getPane('lnArrow').style.zIndex=450;map.getPane('lnArrow').style.pointerEvents='none';
 const wmts=k=>L.tileLayer('https://wmts.nlsc.gov.tw/wmts/'+k+'/default/GoogleMapsCompatible/{z}/{y}/{x}',{maxNativeZoom:19,maxZoom:21,attribution:'© 內政部國土測繪中心'});
@@ -1498,20 +1498,23 @@ function rootStHtml(chips){
 }
 /* v28：施測進度（一個方向＝一次觀測；雙向線兩個方向，單向一個） */
 function obsProg(){
-  let tot=0,done=0;const st=new Map(),todo=[];
+  const st=new Map();
   lines.forEach(l=>{if(!getPt(l.a)||!getPt(l.b))return;const f=lnFrom(l),dirs=f?[[f,f===l.a?l.b:l.a]]:[[l.a,l.b],[l.b,l.a]];
-    dirs.forEach(([a,b])=>{tot++;const ok=obs.has(obsKey(a,b));if(ok)done++;else todo.push([a,b]);const g=st.get(a)||{n:0,d:0};g.n++;if(ok)g.d++;st.set(a,g)})});
-  todo.sort((x,y)=>ptCmp(x[0],y[0])||ptCmp(x[1],y[1]));
-  return{tot,done,nSt:st.size,stDone:[...st.values()].filter(g=>g.d===g.n).length,todo};
+    dirs.forEach(([a,b])=>{const g=st.get(a)||{n:0,d:0};g.n++;if(obs.has(obsKey(a,b)))g.d++;st.set(a,g)})});
+  const cnt=[0,0,0],todo=[];let done=0;
+  st.forEach((g,id)=>{const r=grpRank(id);cnt[r<3?0:r-2]++;if(g.d===g.n)done++;else todo.push(id)});
+  todo.sort(ptCmp);
+  return{nSt:st.size,stDone:done,cnt,todo};
 }
+/* v29.3：施測進度只留設站完成（進度條＋各類站數）與還沒設站的點 */
 function obsProgHtml(){
-  const o=obsProg();if(!o.tot)return '';const pc=Math.round(o.done/o.tot*100),k='obs_todo';
+  const o=obsProg();if(!o.nSt)return '';const pc=Math.round(o.stDone/o.nSt*100),k='obs_todo';
+  const br=[['新設點',o.cnt[0]],['加密點',o.cnt[1]],['圖根',o.cnt[2]]].filter(x=>x[1]).map(x=>x[0]+' '+x[1]).join('、');
   return '<div class="grp"><span class="label">施測進度</span><ul class="list">'+
-    '<li class="pe"><div class="prow"><span>觀測方向</span><span class="d">'+o.done+' / '+o.tot+'（'+pc+'%）</span></div><div class="pbar" style="margin-top:6px"><i style="width:'+pc+'%"></i></div></li>'+
-    '<li><span class="nm">設站完成</span><span class="d">'+o.stDone+' / '+o.nSt+' 站</span></li>'+
-    (o.todo.length?'<li class="pe"><details class="mkx" data-pk="'+k+'"'+(progOpen.has(k)?' open':'')+'><summary class="prow"><span>還沒測的方向</span><span class="d">'+o.todo.length+'</span></summary><div class="btns">'+
-      o.todo.map(([a,b])=>'<button type="button" class="mini" data-stgo="'+esc(a)+'">'+esc(getPt(a).name)+'→'+esc(getPt(b).name)+'</button>').join('')+'</div></details></li>':'<li><span class="nm">還沒測的方向</span><span class="ok2">全部完成 ✓</span></li>')+
-    '</ul><p class="hint">點「還沒測的方向」可直接打開該站的設站觀測。</p></div>';
+    '<li class="pe"><div class="prow"><span>設站完成</span><span class="d">'+o.stDone+' / '+o.nSt+' 站（'+pc+'%）</span></div><div class="pbar" style="margin-top:6px"><i style="width:'+pc+'%"></i></div><div class="d" style="margin-top:4px;font-size:12px">（'+br+'）</div></li>'+
+    (o.todo.length?'<li class="pe"><details class="mkx" data-pk="'+k+'"'+(progOpen.has(k)?' open':'')+'><summary class="prow"><span>還沒設站的點</span><span class="d">'+o.todo.length+'</span></summary><div class="btns">'+
+      o.todo.map(a=>'<button type="button" class="mini" data-stgo="'+esc(a)+'">'+esc(getPt(a).name)+'</button>').join('')+'</div></details></li>':'<li><span class="nm">還沒設站的點</span><span class="ok2">全部完成 ✓</span></li>')+
+    '</ul><p class="hint">點「還沒設站的點」裡的點號可直接打開該站的設站觀測。</p></div>';
 }
 function enterList(){
   if(needProject())return;
