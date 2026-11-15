@@ -209,6 +209,23 @@ details.grp>summary{cursor:pointer;color:var(--muted);font-size:13px;min-height:
 /* 詳細面板：兩欄列、收合 */
 .r2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .r2>.btn{min-width:0}
+.r3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}.r3>.btn,.r3 .btn,.r3>.in{min-width:0}.dc{display:contents}
+.btn.st{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
+.pin.std i{position:relative}
+.pin.std i::before{content:"✓";position:absolute;left:26px;top:7px;width:13px;height:13px;border-radius:50%;background:#2f9e44;color:#fff;font-size:9px;font-weight:700;line-height:13px;text-align:center;box-shadow:0 0 0 1.5px #fff}
+.stsum{display:flex;align-items:center;gap:10px;font-size:15px}.stsum span{flex:1}.stsum .btn{flex:none;min-width:0;min-height:40px;padding:0 14px;font-size:14px}
+.pbar{height:8px;border-radius:4px;background:var(--line);overflow:hidden}.pbar i{display:block;height:100%;background:#2f9e44}
+.list button.go.obs{gap:10px}.obs .cbx{width:24px;height:24px;border:2px solid var(--muted);border-radius:6px;flex:none;display:grid;place-items:center;color:#fff;font-weight:700;font-size:14px}
+.obs.on .cbx{background:#2f9e44;border-color:#2f9e44}.obs .nm{white-space:normal;line-height:1.35}.obs .who{font-size:12px;color:var(--muted);font-weight:400}.obs.on{opacity:.7}.obs .d{text-align:right;line-height:1.35;white-space:nowrap}
+.lfin{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:10px;padding:0 6px 0 10px;background:var(--surface)}
+.lfin input{flex:1;min-width:0;border:0;background:transparent;font-size:16px;height:42px;color:var(--fg);outline:none}
+.lfin button{width:30px;height:30px;border-radius:50%;border:0;background:var(--line);font-size:15px;color:var(--fg);flex:none}
+.lfc{display:flex;gap:6px;flex-wrap:wrap}.lfc button{font-size:13px;padding:5px 11px;border-radius:16px;border:1px solid var(--line);background:var(--bg);color:var(--fg);font-weight:700}
+.lfc button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
+.lfn{font-size:13px;color:var(--muted)}
+#findBan{position:fixed;z-index:1250;left:12px;right:12px;top:calc(env(safe-area-inset-top,0px) + 112px);margin:auto;max-width:480px;background:#1d4ed8;color:#fff;border-radius:12px;padding:8px 8px 8px 12px;display:flex;align-items:center;gap:10px;box-shadow:0 4px 14px rgba(0,0,0,.3);font-size:14px;line-height:1.45}
+#findBan.ok{background:#2f9e44}#findBan[hidden]{display:none}#findTxt{flex:1;min-width:0}
+#findBan button{flex:none;border:0;border-radius:10px;background:rgba(255,255,255,.22);color:#fff;font-weight:700;font-size:14px;padding:9px 12px}
 .r2 select.in{min-height:48px}
 #sheet .grab{width:60px;height:5px;margin:2px 0 4px;position:relative}
 #sheet .grab::before{content:"";position:absolute;left:-30px;right:-30px;top:-10px;bottom:-10px}
@@ -263,6 +280,7 @@ ol.steps{margin:0;padding-left:20px;line-height:1.8;font-size:14px}
 
 <section id="sheet" hidden></section>
 <div id="toast" role="status"></div>
+<div id="findBan" hidden><div id="findTxt"></div><button type="button" id="findEnd">結束找點</button></div>
 <input type="file" id="fileIn" hidden>
 
 <div id="login" class="modal" hidden>
@@ -418,6 +436,12 @@ function buildCsv(pts,opt,extra){
   const w=4+(opt.extra?5:0);
   return '﻿'+rows.map(r=>{const q=r.slice();while(q.length<w)q.push('');return q.map(csvEsc).join(',')}).join('\r\n')+'\r\n';
 }
+/* v28：施測計畫表（測站、照準點、距離；同一測站只在第一列寫站名）。rows＝[{s,t,d}] 已排好 */
+function buildPlanCsv(rows){
+  const out=[['測站','照準點','距離']];let last=null;
+  rows.forEach(r=>{out.push([r.s===last?'':r.s,r.t,r.d.toFixed(2)]);last=r.s});
+  return '\uFEFF'+out.map(r=>r.map(csvEsc).join(',')).join('\r\n')+'\r\n';
+}
 const xmlEsc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]));
 function distM(a,b){const p=toTM2(a.lat,a.lng),q=toTM2(b.lat,b.lng);return Math.hypot(p.N-q.N,p.E-q.E)}
 function kmlColor(hex){const h=String(hex||'#1d6fe0').replace('#','');return 'ff'+h.slice(4,6)+h.slice(2,4)+h.slice(0,2)}
@@ -519,7 +543,7 @@ const colRef=c=>collection(fs,'projects',code,c);
 const docRef=(c,id)=>doc(fs,'projects',code,c,id);
 
 /* ---------- map & layers ---------- */
-/* v27：歷年圖根納入本次規劃（isTie）、匯出 CSV 連同加密點／圖根（buildCsv extra）、通視線方向與多餘觀測（lnDir／arrowMarker／renderLineSheet）。v26：定位追蹤開著時，新增點位十字直接移到最新位置（enterAdd）。v25：讀取計數見 useHtml／countSnap，重新訂閱門檻 1 分鐘。v24：點號避讓與縮小圈圈見 layoutLabels。v23：最大 zoom 21（底圖原生到 19，20、21 為放大顯示；自動縮放上限不變） */
+/* v28：設站觀測（obs／enterStation／renderStation）、找點（startFind／findBan）、施測進度（obsProgHtml）、施測計畫表（buildPlanCsv）、詳細頁按鈕兩排。v27.1：工作進度圖根三段收合、姓名重複提醒（checkNameDup）、點位清單篩選（lf／lfOk）。v27：歷年圖根納入本次規劃（isTie）、匯出 CSV 連同加密點／圖根（buildCsv extra）、通視線方向與多餘觀測（lnDir／arrowMarker／renderLineSheet）。v26：定位追蹤開著時，新增點位十字直接移到最新位置（enterAdd）。v25：讀取計數見 useHtml／countSnap，重新訂閱門檻 1 分鐘。v24：點號避讓與縮小圈圈見 layoutLabels。v23：最大 zoom 21（底圖原生到 19，20、21 為放大顯示；自動縮放上限不變） */
 const map=L.map('map',{zoomControl:false,center:[23.487,120.471],zoom:16,maxZoom:21});
 map.createPane('lnArrow');map.getPane('lnArrow').style.zIndex=450;map.getPane('lnArrow').style.pointerEvents='none';
 const wmts=k=>L.tileLayer('https://wmts.nlsc.gov.tw/wmts/'+k+'/default/GoogleMapsCompatible/{z}/{y}/{x}',{maxNativeZoom:19,maxZoom:21,attribution:'© 內政部國土測繪中心'});
@@ -661,6 +685,18 @@ const lineKey=(a,b)=>[a,b].sort().join('~');
 const lnDir=l=>l&&(l.dir==='ab'||l.dir==='ba')?l.dir:'';
 const lnFrom=l=>{const d=lnDir(l);return d==='ab'?l.a:d==='ba'?l.b:''};
 const lnView=(l,id)=>{const f=lnFrom(l);return !f?'both':f===id?'out':'in'};
+/* v28：施測觀測紀錄 obs，doc id＝測站id>照準點id，{s,t,by,at}；勾＝有這筆 */
+const obs=new Map(),obsKey=(s,t)=>s+'>'+t;
+/* 某站要觀測的照準點：通視線另一端，單向「只看得過來」的不算 */
+function stDirs(id){const out=[];lines.forEach(l=>{if(!getPt(l.a)||!getPt(l.b))return;if(l.a!==id&&l.b!==id)return;if(lnView(l,id)==='in')return;out.push(l.a===id?l.b:l.a)});return out}
+function stCnt(id){const ds=stDirs(id);return{n:ds.length,d:ds.filter(t=>obs.has(obsKey(id,t))).length}}
+const isStDone=id=>{const c=stCnt(id);return c.n>0&&c.d===c.n};
+/* 排序：BI → HI → 自訂 → 加密點 → 圖根，同類點號小的優先 */
+function grpRank(id){if(isK(id))return isRoot(id)?4:3;const p=points.get(id),pn=p&&parseName(p.name);return pn?(pn.p==='BI'?0:1):2}
+const ptCmp=(x,y)=>grpRank(x)-grpRank(y)||nameCmp((getPt(x)||{}).name||'',(getPt(y)||{}).name||'');
+function azTM(a,b){const p=toTM2(a.lat,a.lng),q=toTM2(b.lat,b.lng);return(Math.atan2(q.E-p.E,q.N-p.N)*180/Math.PI+360)%360}
+function fmtAz(z){let d=Math.floor(z),m=Math.round((z-d)*60);if(m===60){d=(d+1)%360;m=0}return d+'°'+String(m).padStart(2,'0')+'′'}
+const dir8=z=>['北','東北','東','東南','南','西南','西','西北'][Math.round(z/45)%8];
 const lnKind=l=>!l.ex&&!lnDir(l)?'n':lnDir(l)?'x'+lnDir(l):'x';
 const fmtDist=m=>m>=1000?(m/1000).toFixed(2)+' km':m.toFixed(1)+' m';
 const fmtTime=t=>t?new Date(t).toLocaleString('zh-TW',{hour12:false,month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}):'';
@@ -696,6 +732,7 @@ function pinCls(id){
   if(isRoot(id))c.push('rt');
   if(isOff(id))c.push('off');
   if(isTie(id))c.push('tie');
+  if(isStDone(id))c.push('std');
   const p=!isK(id)&&points.get(id);
   if(p){const pn=parseName(p.name);c.push(pn?pn.p.toLowerCase():'ot');if(!CSV_MARKS.includes(p.mark))c.push('nm')}
   if(dragId===id)c.push('mv','sel');
@@ -804,6 +841,7 @@ function draw(){
   if(mode==='move'&&pendMove&&!points.has(pendMove.id)){pendMove=null;dragId=null;clearMvLayers();toast('這個點已被其他人刪除');closeAll();return}
   if(pendingSel&&points.has(pendingSel)){const id=pendingSel;pendingSel=null;select(id);return}
   if(mode==='detail'||mode==='link'){if(!getPt(sel)){closeAll();return}refreshDetail()}
+  else if(mode==='station'){if(!getPt(stId)){closeAll();return}renderStation(false)}
   else if(mode==='list'){if(!posId)renderList()}
   else if(mode==='progress')renderProgress();
   else if(mode==='add'){const r=$('#addEd .ed');if(r)edCheck(r)}
@@ -829,7 +867,7 @@ document.addEventListener('pointerup',e=>{
   if(dy>40&&!sheetMin)setMin(true);else if(dy<-40&&sheetMin)setMin(false);
 },true);
 document.addEventListener('pointercancel',()=>{swp=null},true);
-function closeAll(){if(pendMove)endAskMove(false);mode='idle';sel=null;selLine=null;confirmLineDel=false;confirmDel=false;gpsFix=null;armed=null;pendCsv=null;$('#cross').hidden=true;sheet.hidden=true;sheet.innerHTML='';document.body.classList.remove('has-sheet');draw()}
+function closeAll(){stId=null;stArm=false;if(pendMove)endAskMove(false);mode='idle';sel=null;selLine=null;confirmLineDel=false;confirmDel=false;gpsFix=null;armed=null;pendCsv=null;$('#cross').hidden=true;sheet.hidden=true;sheet.innerHTML='';document.body.classList.remove('has-sheet');draw()}
 function needProject(){
   if(!cfgOk){showInfo('尚未設定資料庫','<p class="hint">網頁裡的 Firebase 設定還沒填入，請依說明完成設定後再使用。</p>');return true}
   if(!me||code.length<6){askLogin();return true}
@@ -879,6 +917,7 @@ sheet.addEventListener('click',e=>{
   edCheck(root);
 });
 sheet.addEventListener('input',e=>{
+  if(e.target.id==='lstQ'){lf[listTab].q=e.target.value;const c=sheet.querySelector('[data-lfclr]');if(c)c.hidden=!e.target.value;posId=null;renderList();return}
   if(e.target.classList.contains('numin')){e.target.value=e.target.value.replace(/\D/g,'').slice(0,3);edCheck(e.target.closest('.ed'))}
   else if(e.target.classList.contains('txtin'))edCheck(e.target.closest('.ed'));
 });
@@ -925,8 +964,17 @@ function showMe(c,fit){
   const inR=cand.filter(x=>x.d<=NEAR_R);
   let near=inR.slice(0,NEAR_N),far=false;
   if(!near.length&&cand.length){near=[cand[0]];far=true}
+  if(findId&&!getPt(findId))endFind(true);
+  let fOk=false;
+  if(findId){
+    const tp=getPt(findId),d=distM(me0,tp),z=azTM(me0,tp);fOk=d<=3;near=[{p:tp,d}];far=false;
+    $('#findTxt').innerHTML='<b>找 '+esc(tp.name)+'・'+fmtDist(d)+'・'+dir8(z)+' '+Math.round(z)%360+'°</b>'+(fOk?'<br>已在 GPS 誤差範圍內，請用儀器確認':'<br><small>精度約 ±'+Math.round(c.accuracy||0)+' m</small>');
+    $('#findBan').classList.toggle('ok',fOk);
+    if(findFit){findFit=false;map.fitBounds(L.latLngBounds([ll,[tp.lat,tp.lng]]).pad(.3),{maxZoom:19})}
+    fit=false;
+  }
   near.forEach(x=>{
-    const pl=L.polyline([ll,[x.p.lat,x.p.lng]],{color:'#2563eb',weight:2,dashArray:'6 6',interactive:false}).addTo(map);
+    const pl=L.polyline([ll,[x.p.lat,x.p.lng]],{color:fOk?'#2f9e44':'#2563eb',weight:findId?3:2,dashArray:'6 6',interactive:false}).addTo(map);
     pl.bindTooltip(fmtDist(x.d),{permanent:true,direction:'center',className:'dist-tip'});
     locLayers.push(pl);
   });
@@ -940,6 +988,21 @@ function nearTxt(r){
   if(r.far)return NEAR_R+' m 內沒有點位，最近的是 '+nm+'，距離 '+fmtDist(x.d)+'。';
   return NEAR_R+' m 內有 '+r.cnt+' 個點位'+(r.cnt>NEAR_N?'（畫出最近 '+NEAR_N+' 個）':'')+'，最近的是 '+nm+'，距離 '+fmtDist(x.d)+'。';
 }
+/* v28：找點。GPS 到目標畫虛線＋上方橫幅（距離、方位），3 m 內變綠。找點中自動停止改 15 分鐘 */
+let findId=null,findFit=false;
+const trkMs=()=>findId?900000:300000;
+function trkTimer(t){clearTimeout(t.timer);const ms=trkMs();t.timer=setTimeout(()=>{if(trk===t){stopTrack();toast('已追蹤 '+Math.round(ms/60000)+' 分鐘，自動停止定位')}},ms)}
+function startFind(id){
+  const p=getPt(id);if(!p)return;
+  findId=id;findFit=true;closeAll();
+  $('#findTxt').innerHTML='<b>找 '+esc(p.name)+'</b>・定位中…';$('#findBan').classList.remove('ok');$('#findBan').hidden=false;
+  if(trk){trkTimer(trk);if(trk.last)showMe(trk.last,false)}else startTrack();
+}
+function endFind(quiet){
+  if(!findId)return;findId=null;$('#findBan').hidden=true;
+  if(!quiet&&trk){trkTimer(trk);if(trk.last)showMe(trk.last,false)}
+}
+$('#findEnd').addEventListener('click',()=>endFind(false));
 /* 持續追蹤（再按一次或 5 分鐘自動停止）＋方向扇形（羅盤） */
 let trk=null,hdMk=null,hdOn=false;
 const locBtn=()=>$('#locBtn');
@@ -988,7 +1051,7 @@ function startTrack(){
       const kind=err.code===1?'denied':err.code===3?'timeout':'unavailable';
       if(t.first||kind==='denied'){stopTrack();gpsProblem({kind})}
     },{enableHighAccuracy:true,timeout:25000,maximumAge:0});
-    t.timer=setTimeout(()=>{if(trk===t){stopTrack();toast('已追蹤 5 分鐘，自動停止定位')}},300000);
+    trkTimer(t);
   })();
 }
 function onTrack(t,c){
@@ -997,13 +1060,14 @@ function onTrack(t,c){
   if(!hdMk)hdMarker([c.latitude,c.longitude]);
   if(t.first){
     t.first=false;locBtnState('trk');
+    if(findId){showMe(c,false);return}
     const r=showMe(c,true);
     if(!r.near.length||r.far)map.setView([c.latitude,c.longitude],Math.max(map.getZoom(),18));
     toast('持續定位中（再按一次停止），精度約 ±'+Math.round(c.accuracy)+' m。'+nearTxt(r));
   }else showMe(c,false);
 }
 function stopTrack(){
-  const t=trk;trk=null;
+  const t=trk;trk=null;endFind(true);
   if(t){if(t.wid!=null)navigator.geolocation.clearWatch(t.wid);clearTimeout(t.timer)}
   hdUnlisten();if(hdMk){map.removeLayer(hdMk);hdMk=null}
   clearLoc();locBtnState('');
@@ -1122,14 +1186,14 @@ function select(id){
   showSheet('<div class="minbar"><span class="nm" id="mName"></span><span class="inf" id="mInf"></span><button class="mini" data-act="expand">展開 ︽</button>'+xb+'</div>'+
    '<div class="head"><h2 id="dName"></h2>'+(k?'':'<button class="mini" data-act="rename">改號</button>')+'<button class="mini" data-act="collapse">收合 ︾</button>'+xb+'</div>'+
    '<div id="renBox" hidden></div>'+
-   (k?'<div class="r2" id="row1"></div>'+
+   (k?'<div class="r2" id="row1"></div><div class="r2" id="actBtns"></div>'+
       (rt?'<div><label class="label" for="fStat">現況</label><select class="in" id="fStat"><option value="">正常</option><option value="lost">遺失（現場找不到）</option><option value="unused">不使用</option></select></div>'+
         '<div id="stNoteBox" hidden><label class="label" for="fStNote">現況說明</label><textarea class="in" id="fStNote" maxlength="500" placeholder="例如：已被柏油覆蓋、附近施工…"></textarea></div>'+
         '<label class="row"><input type="checkbox" id="fTie"><span>納入本次規劃<br><small class="hint" id="tieHint">全組同步；匯出 CSV 可連同匯出</small></span></label>':'')+
       '<details class="grp" id="lkDet"><summary id="lkTitle">通視清單</summary><div id="lkBox"></div></details>'
-    :'<div class="r2"><select class="in" id="fMark" aria-label="樁標種類"><option value="">樁標：請選擇</option><option value="鋼標">鋼標</option><option value="道釘">道釘</option><option value="其他">其他</option></select><span id="row1"></span></div>'+
+    :'<div class="r3"><select class="in" id="fMark" aria-label="樁標種類"><option value="">樁標：請選擇</option><option value="鋼標">鋼標</option><option value="道釘">道釘</option><option value="其他">其他</option></select><span class="dc" id="row1"></span></div><div class="r3" id="actBtns"></div>'+
      '<div id="noteBox" hidden><label class="label" for="fNote">其他樁標說明</label><textarea class="in" id="fNote" maxlength="500" placeholder="請說明樁標種類或備註…"></textarea></div>')+
-   '<div class="r2" id="actBtns"></div>');
+   '');
   sheet.classList.add('dt');sheet.classList.toggle('min',sheetMin);
   fillDetail(true);draw();
   focusPt(p);
@@ -1156,21 +1220,61 @@ function fillDetail(first){
   $('#mInf').textContent=(k?catName(sel)+(st?' · '+ST_NAME[st]:'')+(isTie(sel)?' · 規劃':''):(p.mark||'樁標未設'))+' · 通視 '+nL;
   const sightBtn='<button class="btn sight" data-act="link">通視（'+nL+'）</button>',
     navBtn='<a class="btn nav" id="navBtn" target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&travelmode=driving&destination='+p.lat.toFixed(7)+','+p.lng.toFixed(7)+'">導航</a>';
+  const sc=stCnt(sel),stBtn='<button class="btn st" data-act="station">設站'+(sc.n?(sc.d===sc.n?' ✓':' '+sc.d+'/'+sc.n):'')+'</button>',
+    findBtn='<button class="btn" data-act="find">找點</button>';
+  /* v28：兩排。新設點「樁標｜通視｜設站」「找點｜導航｜刪除」；加密點／圖根「通視｜設站」「找點｜導航」 */
+  const r1=$('#row1');if(r1)r1.innerHTML=sightBtn+stBtn;
+  const ab=$('#actBtns');
   if(k){
-    $('#row1').innerHTML=sightBtn+navBtn;
+    ab.innerHTML=findBtn+navBtn;
     $('#lkTitle').textContent='通視清單（'+nL+'）▸';$('#lkBox').innerHTML=lkListHtml();
-    $('#actBtns').hidden=true;
   }else{
-    $('#row1').outerHTML=sightBtn.replace('<button ','<button id="row1" ');
-    $('#actBtns').innerHTML=confirmDel
+    ab.className=confirmDel?'r2':'r3';
+    ab.innerHTML=confirmDel
       ?'<button class="btn dngfill" data-act="delYes">確定刪除（含 '+nL+' 條通視線）</button><button class="btn" data-act="delNo">取消</button>'
-      :navBtn+'<button class="btn dng" data-act="del">刪除</button>';
+      :findBtn+navBtn+'<button class="btn dng" data-act="del">刪除</button>';
   }
 }
 /* 建立／修改紀錄與來源（v21 起放在點位清單的「資訊」展開區） */
 function metaHtml(p){
   if(isK(p.id)){const r=isRoot(p.id)&&rootSt(p.id)&&rstat.get(p.id);return catName(p.id)+' · 固定資料（來自 GitHub 檔案），位置與點號不可在此修改'+(r?'<br>現況標註：'+esc(r.by||'?')+' · '+fmtTime(r.at):'')}
   return '建立：'+esc(p.by||'?')+' · '+fmtTime(p.at)+'<br>最後修改：'+esc(p.editedBy||p.by||'?')+' · '+fmtTime(p.editedAt||p.at)+'<br>來源：'+esc(srcText(p));
+}
+/* v28：設站觀測清單 */
+let stId=null,stArm=false,stArmT=null;
+function enterStation(id){if(!getPt(id))return;stId=id;sel=id;mode='station';stArm=false;$('#cross').hidden=true;renderStation(true);draw()}
+function renderStation(first){
+  const p=getPt(stId);if(!p){closeAll();return}
+  const ds=stDirs(stId),rows=ds.map(t=>({t,o:obs.get(obsKey(stId,t))})).sort((a,b)=>(!!a.o-!!b.o)||ptCmp(a.t,b.t));
+  const n=rows.length,d=rows.filter(r=>r.o).length;
+  let nIn=0;lines.forEach(l=>{if((l.a===stId||l.b===stId)&&getPt(l.a)&&getPt(l.b)&&lnView(l,stId)==='in')nIn++});
+  const st0=first?0:sheet.scrollTop;
+  const btn=!n?'':d<n?'<button class="btn pri" data-act="obsAll">全部完成</button>':'<button class="btn '+(stArm?'dngfill':'dng')+'" data-act="obsNone">'+(stArm?'再按一次確定取消':'全部取消')+'</button>';
+  showSheet('<div class="head"><button class="mini" data-act="stBack">‹ 返回</button><h2>'+esc(p.name)+' 設站觀測</h2><button class="x" data-act="close" aria-label="關閉">×</button></div>'+
+    '<div class="stsum"><span>已觀測 <b>'+d+' / '+n+'</b> 個方向</span>'+btn+'</div><div class="pbar"><i style="width:'+(n?Math.round(d/n*100):0)+'%"></i></div>'+
+    (n?'<span class="label">點一列就打勾（再點一次取消）</span><ul class="list">'+rows.map(r=>{const o=getPt(r.t);
+      return '<li><button class="go obs'+(r.o?' on':'')+'" data-act="obsT" data-t="'+esc(r.t)+'"><span class="cbx">'+(r.o?'✓':'')+'</span><span class="nm">'+esc(o.name)+(isK(r.t)?' <small>（'+catName(r.t)+'）</small>':'')+(r.o?'<br><small class="who">'+esc(r.o.by||'?')+' '+fmtTime(r.o.at)+'</small>':'')+'</span><span class="d">'+fmtDist(distM(p,o))+'<br>方位 '+fmtAz(azTM(p,o))+'</span></button></li>'}).join('')+'</ul>'
+      :'<div class="list"><div class="empty">這個點沒有要在這站觀測的通視線。</div></div>')+
+    '<p class="hint">依 BI → HI → 自訂 → 加密點 → 圖根、點號小的排前面，打勾的移到最下面。方位角用 TWD97 座標算的概略值（從正北順時針）。'+(nIn?'另有 '+nIn+' 條單向線只看得過來，不在這站觀測，所以不列。':'')+'</p>');
+  sheet.scrollTop=st0;
+}
+function obsToggle(t){
+  if(!stId)return;const k=obsKey(stId,t),c=stCnt(stId);
+  if(obs.has(k))fire(deleteDoc(docRef('obs',k)));
+  else{fire(setDoc(docRef('obs',k),{s:stId,t,by:me,at:Date.now()}));if(c.d+1===c.n)toast(getPt(stId).name+' 設站完成 ✓')}
+}
+async function obsAll(){
+  if(!stId)return;const now=Date.now(),ops=stDirs(stId).filter(t=>!obs.has(obsKey(stId,t))).map(t=>b=>b.set(docRef('obs',obsKey(stId,t)),{s:stId,t,by:me,at:now}));
+  if(!ops.length)return;const nm=getPt(stId).name;
+  try{await commitChunks(ops,400);toast(nm+' 設站完成 ✓')}catch(e){toast('寫入失敗，請確認網路與資料庫規則')}
+}
+async function obsNone(){
+  if(!stId)return;
+  if(!stArm){stArm=true;renderStation(false);clearTimeout(stArmT);stArmT=setTimeout(()=>{if(stArm){stArm=false;if(mode==='station')renderStation(false)}},4000);return}
+  stArm=false;clearTimeout(stArmT);
+  const ops=[...obs.values()].filter(o=>o.s===stId).map(o=>b=>b.delete(docRef('obs',obsKey(o.s,o.t))));
+  try{await commitChunks(ops,400);toast('已取消 '+getPt(stId).name+' 的全部觀測紀錄')}catch(e){toast('寫入失敗，請確認網路與資料庫規則')}
+  renderStation(false);
 }
 function refreshDetail(){
   if(mode==='link'){
@@ -1367,7 +1471,7 @@ function renderProgress(){
     '<li><span class="nm">BI 開頭／HI 開頭</span><span class="d">'+pr.BI.count+' ／ '+pr.HI.count+'</span></li>'+
     '<li><span class="nm">鋼標</span><span class="d">'+pr.marks['鋼標']+'</span></li>'+
     mkRow('道釘','道釘',chips)+mkRow('其他','其他',noteChips)+mkRow('未設定','樁標未設定',chips)+'</ul></div>'+
-    todo('通視線為 0',pr.noLink)+todo('樁標為「其他」但沒填備註',pr.noNote)+rootStHtml(chips)+useHtml());
+    todo('通視線為 0',pr.noLink)+todo('樁標為「其他」但沒填備註',pr.noNote)+obsProgHtml()+rootStHtml(chips)+useHtml());
   if(st0)sheet.scrollTop=st0;
 }
 /* 工作進度：展開中的樁標列（重新整理畫面時維持） */
@@ -1376,25 +1480,69 @@ sheet.addEventListener('toggle',e=>{const d=e.target;if(d&&d.dataset&&d.dataset.
 function rootStHtml(chips){
   const roots=[...known.values()].filter(p=>p.cat==='root');if(!roots.length)return '';
   const by=st=>roots.filter(p=>rootSt(p.id)===st).sort((a,b)=>nameCmp(a.name,b.name));
-  const sec=(t,arr)=>'<div class="grp"><span class="label">'+t+'（'+arr.length+'）</span>'+(arr.length?'<div class="btns">'+chips(arr)+'</div>':'<div class="hint">無</div>')+'</div>';
   const tie=roots.filter(p=>isTie(p.id)).sort((a,b)=>nameCmp(a.name,b.name));
-  return '<div class="grp"><span class="label">歷年圖根現況（共 '+roots.length+' 點）</span></div>'+sec('納入本次規劃',tie)+sec('遺失（現場找不到）',by('lost'))+sec('不使用',by('unused'));
+  /* v27.1：三段預設收起，展開狀態記在 progOpen（重畫時保留） */
+  const sec=(k,t,arr)=>!arr.length?'<li><span class="nm">'+t+'</span><span class="d">0</span></li>':
+    '<li class="pe"><details class="mkx" data-pk="'+k+'"'+(progOpen.has(k)?' open':'')+'><summary class="prow"><span>'+t+'</span><span class="d">'+arr.length+'</span></summary><div class="btns">'+chips(arr)+'</div></details></li>';
+  return '<div class="grp"><span class="label">歷年圖根現況（共 '+roots.length+' 點）</span><ul class="list">'+sec('rt_tie','納入本次規劃',tie)+sec('rt_lost','遺失（現場找不到）',by('lost'))+sec('rt_unused','不使用',by('unused'))+'</ul></div>';
+}
+/* v28：施測進度（一個方向＝一次觀測；雙向線兩個方向，單向一個） */
+function obsProg(){
+  let tot=0,done=0;const st=new Map(),todo=[];
+  lines.forEach(l=>{if(!getPt(l.a)||!getPt(l.b))return;const f=lnFrom(l),dirs=f?[[f,f===l.a?l.b:l.a]]:[[l.a,l.b],[l.b,l.a]];
+    dirs.forEach(([a,b])=>{tot++;const ok=obs.has(obsKey(a,b));if(ok)done++;else todo.push([a,b]);const g=st.get(a)||{n:0,d:0};g.n++;if(ok)g.d++;st.set(a,g)})});
+  todo.sort((x,y)=>ptCmp(x[0],y[0])||ptCmp(x[1],y[1]));
+  return{tot,done,nSt:st.size,stDone:[...st.values()].filter(g=>g.d===g.n).length,todo};
+}
+function obsProgHtml(){
+  const o=obsProg();if(!o.tot)return '';const pc=Math.round(o.done/o.tot*100),k='obs_todo';
+  return '<div class="grp"><span class="label">施測進度</span><ul class="list">'+
+    '<li class="pe"><div class="prow"><span>觀測方向</span><span class="d">'+o.done+' / '+o.tot+'（'+pc+'%）</span></div><div class="pbar" style="margin-top:6px"><i style="width:'+pc+'%"></i></div></li>'+
+    '<li><span class="nm">設站完成</span><span class="d">'+o.stDone+' / '+o.nSt+' 站</span></li>'+
+    (o.todo.length?'<li class="pe"><details class="mkx" data-pk="'+k+'"'+(progOpen.has(k)?' open':'')+'><summary class="prow"><span>還沒測的方向</span><span class="d">'+o.todo.length+'</span></summary><div class="btns">'+
+      o.todo.map(([a,b])=>'<button type="button" class="mini" data-stgo="'+esc(a)+'">'+esc(getPt(a).name)+'→'+esc(getPt(b).name)+'</button>').join('')+'</div></details></li>':'<li><span class="nm">還沒測的方向</span><span class="ok2">全部完成 ✓</span></li>')+
+    '</ul><p class="hint">點「還沒測的方向」可直接打開該站的設站觀測。</p></div>';
 }
 function enterList(){
   if(needProject())return;
-  posId=null;
+  posId=null;lfReset();sheet.dataset.ltab='';
   sel=null;mode='list';$('#cross').hidden=true;renderList();draw();
 }
-function renderList(){
-  const src=listTab==='new'?[...points.values()]:[...known.values()].filter(p=>(p.cat==='root')===(listTab==='root'));
-  const nK=[...known.values()].filter(p=>p.cat!=='root').length,nR=known.size-nK;
-  const arr=src.sort((a,b)=>nameCmp(a.name,b.name));
-  showSheet('<div class="head"><h2>點位清單</h2><button class="x" data-act="close" aria-label="關閉">×</button></div>'+
-    '<div class="seg2"><button type="button" data-tab="new" aria-pressed="'+(listTab==='new')+'">新設點 '+points.size+'</button><button type="button" data-tab="known" aria-pressed="'+(listTab==='known')+'">加密點 '+nK+'</button><button type="button" data-tab="root" aria-pressed="'+(listTab==='root')+'">歷年圖根 '+nR+'</button></div>'+
-    (arr.length?'<ul class="list">'+arr.map(p=>'<li><button class="go" data-go="'+esc(p.id)+'"><span class="nm">'+esc(p.name)+(listTab==='new'?' <small class="mk'+(CSV_MARKS.includes(p.mark)?'':' nomk')+'">'+esc(CSV_MARKS.includes(p.mark)?p.mark:'未設')+'</small>':'')+'</span><span class="d">'+(isTie(p.id)?'規劃 · ':'')+(rootSt(p.id)?ST_NAME[rootSt(p.id)]+' · ':esc(p.by||'')+(p.by?' · ':''))+linksOf(p.id).length+' 線</span></button><button class="mini" data-pos="'+esc(p.id)+'" aria-expanded="'+(posId===p.id)+'">資訊</button></li>'+(posId===p.id?posPanel(p):'')).join('')+'</ul>':'<div class="list"><div class="empty">'+(listTab==='new'?'還沒有新設點。按「新增點位」建立，或到圖層與資料匯入。':'還沒有'+(listTab==='root'?'歷年圖根':'加密點')+'。到圖層與資料匯入 KML。')+'</div></div>'));
+/* v27.1：點位清單篩選（點號含字＋分類），各分頁分開記住，打開清單時清除 */
+const LF_CH={new:[['','全部'],['BI','BI'],['HI','HI'],['OT','自訂'],['nomk','未設樁標'],['nol','0 線']],known:[['','全部'],['nol','0 線']],root:[['','全部'],['tie','納入規劃'],['lost','遺失'],['unused','不使用'],['nol','0 線']]};
+let lf=null;const lfReset=()=>{lf={new:{q:'',c:''},known:{q:'',c:''},root:{q:'',c:''}}};lfReset();
+function lfOk(p){
+  const f=lf[listTab];if(f.q&&!String(p.name||'').toUpperCase().includes(f.q.trim().toUpperCase()))return false;
+  switch(f.c){
+    case 'BI':case 'HI':{const pn=parseName(p.name);return !!pn&&pn.p===f.c}
+    case 'OT':return !parseName(p.name);
+    case 'nomk':return !CSV_MARKS.includes(p.mark);
+    case 'nol':return !linksOf(p.id).length;
+    case 'tie':return isTie(p.id);
+    case 'lost':case 'unused':return rootSt(p.id)===f.c;
+  }
+  return true;
 }
-
-/* ---------- 圖層與資料 ---------- */
+function listBodyHtml(){
+  const src=listTab==='new'?[...points.values()]:[...known.values()].filter(p=>(p.cat==='root')===(listTab==='root'));
+  const arr=src.filter(lfOk).sort((a,b)=>nameCmp(a.name,b.name)),f=lf[listTab],on=!!(f.q.trim()||f.c);
+  return (on?'<div class="lfn">符合 '+arr.length+' 點（共 '+src.length+'）</div>':'')+
+    (!arr.length&&src.length?'<div class="list"><div class="empty">沒有符合的點位。</div></div>':(arr.length?'<ul class="list">'+arr.map(p=>'<li><button class="go" data-go="'+esc(p.id)+'"><span class="nm">'+esc(p.name)+(listTab==='new'?' <small class="mk'+(CSV_MARKS.includes(p.mark)?'':' nomk')+'">'+esc(CSV_MARKS.includes(p.mark)?p.mark:'未設')+'</small>':'')+'</span><span class="d">'+(isTie(p.id)?'規劃 · ':'')+(rootSt(p.id)?ST_NAME[rootSt(p.id)]+' · ':esc(p.by||'')+(p.by?' · ':''))+linksOf(p.id).length+' 線</span></button><button class="mini" data-pos="'+esc(p.id)+'" aria-expanded="'+(posId===p.id)+'">資訊</button></li>'+(posId===p.id?posPanel(p):'')).join('')+'</ul>':'<div class="list"><div class="empty">'+(listTab==='new'?'還沒有新設點。按「新增點位」建立，或到圖層與資料匯入。':'還沒有'+(listTab==='root'?'歷年圖根':'加密點')+'。到圖層與資料匯入 KML。')+'</div></div>'));
+}
+function listTabsHtml(){
+  const nK=[...known.values()].filter(p=>p.cat!=='root').length,nR=known.size-nK;
+  return '<button type="button" data-tab="new" aria-pressed="'+(listTab==='new')+'">新設點 '+points.size+'</button><button type="button" data-tab="known" aria-pressed="'+(listTab==='known')+'">加密點 '+nK+'</button><button type="button" data-tab="root" aria-pressed="'+(listTab==='root')+'">歷年圖根 '+nR+'</button>';
+}
+function renderList(){
+  const f=lf[listTab];
+  if(!sheet.hidden&&$('#lstQ')&&sheet.dataset.ltab===listTab){$('#lstTabs').innerHTML=listTabsHtml();$('#lstBody').innerHTML=listBodyHtml();return}
+  showSheet('<div class="head"><h2>點位清單</h2><button class="x" data-act="close" aria-label="關閉">×</button></div>'+
+    '<div class="seg2" id="lstTabs">'+listTabsHtml()+'</div>'+
+    '<div class="lfin"><span aria-hidden="true">🔍</span><input id="lstQ" type="search" inputmode="text" autocomplete="off" placeholder="輸入點號篩選" value="'+esc(f.q)+'"><button type="button" data-lfclr="1" aria-label="清除"'+(f.q?'':' hidden')+'>×</button></div>'+
+    '<div class="lfc">'+LF_CH[listTab].map(c=>'<button type="button" data-lfc="'+c[0]+'" aria-pressed="'+(f.c===c[0])+'">'+c[1]+'</button>').join('')+'</div>'+
+    '<div id="lstBody">'+listBodyHtml()+'</div>');
+  sheet.dataset.ltab=listTab;
+}
 function enterLayers(){
   sel=null;mode='layers';$('#cross').hidden=true;renderLayers();draw();
 }
@@ -1424,7 +1572,7 @@ function renderLayers(){
    '<div class="row" style="padding-left:32px;flex-wrap:wrap;gap:6px 16px"><label class="row" style="gap:8px"><input type="radio" name="csvKAll" value="all"'+(csvOpt.knownAll?' checked':'')+'><span>全部</span></label><label class="row" style="gap:8px"><input type="radio" name="csvKAll" value="link"'+(csvOpt.knownAll?'':' checked')+'><span>只匯出和新設點有通視的</span></label></div>'+
    '<label class="row"><input type="checkbox" id="csvRoots"'+(csvOpt.roots?' checked':'')+'><span>連同納入本次規劃的歷年圖根（'+[...known.keys()].filter(isTie).length+' 點）</span></label>'+
    '<p class="hint">連同匯出的點排在新設點後面，樁標種類欄寫「加密點」「歷年圖根」，統計列只算新設點；這些列再匯入時會自動略過。</p>'+
-   '<div class="btns"><button class="btn pri" data-act="expCsv">新設點 CSV</button><button class="btn pri" data-act="expKml">通視線 KML</button></div></div>'+
+   '<div class="btns"><button class="btn pri" data-act="expCsv">新設點 CSV</button><button class="btn pri" data-act="expKml">通視線 KML</button><button class="btn pri" data-act="expPlan">施測計畫表 CSV</button></div></div>'+
 '');
 }
 function csvAskHtml(){
@@ -1514,6 +1662,14 @@ function exportCsv(){
   saveFile('newpoints_'+code+'_'+stamp()+'.csv',buildCsv([...points.values()],csvOpt,extra),'text/csv;charset=utf-8');
   const nK=extra.filter(p=>p.kind==='加密點').length,nR=extra.length-nK;
   toast('已匯出 '+points.size+' 個新設點'+(csvOpt.known?'、'+nK+' 個加密點':'')+(csvOpt.roots?'、'+nR+' 個歷年圖根':'')+'，請到手機的下載項目查看');
+}
+function exportPlan(){
+  if(needProject())return;
+  const st=new Set();lines.forEach(l=>{if(getPt(l.a)&&getPt(l.b)){if(lnView(l,l.a)!=='in')st.add(l.a);if(lnView(l,l.b)!=='in')st.add(l.b)}});
+  const rows=[];[...st].sort(ptCmp).forEach(s=>{const p=getPt(s);stDirs(s).sort(ptCmp).forEach(t=>{const q=getPt(t);rows.push({s:p.name,t:q.name,d:distM(p,q)})})});
+  if(!rows.length){toast('還沒有通視線可以匯出');return}
+  saveFile('plan_'+code+'_'+stamp()+'.csv',buildPlanCsv(rows),'text/csv;charset=utf-8');
+  toast('已匯出施測計畫表：'+st.size+' 站、'+rows.length+' 個方向');
 }
 function exportKml(){
   if(needProject())return;
@@ -1620,8 +1776,11 @@ sheet.addEventListener('click',e=>{
   if(t.dataset.rm){toggleLine(sel,t.dataset.rm);return}
   if(t.dataset.pos){openPos(t.dataset.pos);return}
   if(t.dataset.sgo){let r=parseFloat($('#srRad')&&$('#srRad').value);if(!(r>0))r=200;goFound(t.dataset.sgo,Math.min(r,5000));return}
+  if(t.dataset.stgo){enterStation(t.dataset.stgo);return}
   if(t.dataset.go){const p=getPt(t.dataset.go);if(p){showLyOf(p.id);map.setView([p.lat,p.lng],Math.max(map.getZoom(),18));select(p.id)}return}
-  if(t.dataset.tab){listTab=t.dataset.tab;renderList();return}
+  if(t.dataset.tab){listTab=t.dataset.tab;posId=null;sheet.dataset.ltab='';renderList();return}
+  if(t.hasAttribute('data-lfc')){lf[listTab].c=t.dataset.lfc;sheet.querySelectorAll('.lfc button').forEach(x=>x.setAttribute('aria-pressed',String(x===t)));posId=null;renderList();return}
+  if(t.dataset.lfclr){lf[listTab].q='';const q=$('#lstQ');if(q){q.value='';q.focus()}t.hidden=true;posId=null;renderList();return}
   if(t.dataset.sys){posSys=t.dataset.sys;fillPos();return}
   if(t.dataset.imp){const f=$('#fileIn');f.dataset.kind=t.dataset.imp;f.click();return}
   switch(t.dataset.act){
@@ -1644,6 +1803,13 @@ sheet.addEventListener('click',e=>{
     case 'link':enterLink();break;
     case 'linkDone':select(sel);break;
     case 'del':confirmDel=true;fillDetail(false);break;
+    case 'station':if(sel)enterStation(sel);break;
+    case 'stBack':if(stId){const id=stId;select(id)}break;
+    case 'obsT':obsToggle(t.dataset.t);break;
+    case 'obsAll':obsAll();break;
+    case 'obsNone':obsNone();break;
+    case 'find':if(sel)startFind(sel);break;
+    case 'expPlan':exportPlan();break;
     case 'delNo':confirmDel=false;fillDetail(false);break;
     case 'delYes':deletePoint();break;
     case 'lineDel':confirmLineDel=true;renderLineSheet();break;
@@ -1864,17 +2030,26 @@ $('#loginForm').addEventListener('submit',async e=>{
   if(typed){pj=await resolveProject(typed);if(!pj){toast('密碼錯誤，請再確認');return}}
   else if(code)pj={name:curName,code,dir:curDir};
   else{toast('請輸入專案密碼');return}
-  const changed=pj.code!==code;
+  const changed=pj.code!==code,renamed=n!==me;
   me=n;code=pj.code;curName=pj.name;curDir=pj.dir;store.set('cp_name',me);store.set('cp_pw',code);
   $('#login').hidden=true;setWho();
   if(changed||!unsubs.length)startSync();else{draw();setStatus()}
   if(changed)loadStatic();
+  if(changed||renamed)checkNameDup(n);
 });
+/* v27.1：最近 7 天有其他裝置用同一個姓名就提醒（仍可使用） */
+async function checkNameDup(n){
+  if(!fs||!code||!navigator.onLine)return;
+  try{const qs=await getDocs(query(collection(fs,'projects',code,'usage'),where('name','==',n)));
+    const lim=Date.now()-7*86400e3;
+    if(qs.docs.some(d=>{const v=d.data();return v&&v.dev&&v.dev!==devId&&(+v.at||0)>lim}))toast('此姓名最近有其他裝置使用，請確認');
+  }catch(e){}
+}
 
 /* ---------- sync ---------- */
 function resetLocal(){
   unsubs.forEach(u=>u());unsubs=[];
-  points.clear();lines.clear();rstat.clear();
+  points.clear();lines.clear();rstat.clear();obs.clear();
   markers.forEach(m=>map.removeLayer(m));markers.clear();
   polys.forEach(dropPoly);polys.clear();
   fitted=false;pending=false;syncErr=false;
@@ -1932,20 +2107,20 @@ function useHtml(){
     '<div class="hint">Firebase 免費讀取每日上限 5 萬次，全組共用。這裡只記讀取筆數，用來看會不會超過上限，不記錄位置或操作內容。數字為網頁估算，可能和 Firebase 後台略有出入。</div>';
   if(!useRows)return head+'<div class="hint">讀取中…</div></div>';
   const u=useCur(),by=new Map();
-  useRows.filter(r=>r&&r.day===u.day&&r.dev!==devId).concat([{name:me,open:u.open,resume:u.resume,edit:u.edit}]).forEach(r=>{
-    const k=String(r.name||'?');const o=by.get(k)||{open:0,resume:0,edit:0};
-    o.open+=+r.open||0;o.resume+=+r.resume||0;o.edit+=+r.edit||0;by.set(k,o)});
+  useRows.filter(r=>r&&r.day===u.day&&r.dev!==devId).concat([{name:me,dev:devId,open:u.open,resume:u.resume,edit:u.edit}]).forEach(r=>{
+    const k=String(r.name||'?');const o=by.get(k)||{open:0,resume:0,edit:0,devs:new Set()};
+    o.open+=+r.open||0;o.resume+=+r.resume||0;o.edit+=+r.edit||0;if(r.dev)o.devs.add(r.dev);by.set(k,o)});
   const rows=[...by.entries()].map(([n,o])=>({n,o,t:o.open+o.resume+o.edit})).filter(r=>r.t>0||r.n===me).sort((a,b)=>b.t-a.t);
   const tot=rows.reduce((a,r)=>a+r.t,0),f=n=>n.toLocaleString();
   return head+(useErr?'<div class="bad2">無法讀取其他人的紀錄，下面只有這台裝置</div>':'')+
     '<table class="usetb"><tr><th>姓名</th><th>開網頁</th><th>回前景</th><th>有人修改</th><th>合計</th></tr>'+
-    rows.map(r=>'<tr><td>'+esc(r.n)+'</td><td>'+f(r.o.open)+'</td><td>'+f(r.o.resume)+'</td><td>'+f(r.o.edit)+'</td><td>'+f(r.t)+'</td></tr>').join('')+
+    rows.map(r=>'<tr><td>'+esc(r.n)+(r.o.devs.size>1?'（'+r.o.devs.size+' 台）':'')+'</td><td>'+f(r.o.open)+'</td><td>'+f(r.o.resume)+'</td><td>'+f(r.o.edit)+'</td><td>'+f(r.t)+'</td></tr>').join('')+
     '<tr class="tot"><td colspan="5">全組合計 '+f(tot)+'／'+f(USE_CAP)+'（'+Math.round(tot/USE_CAP*100)+'%）</td></tr></table></div>';
 }
 /* 重新建立即時監聽（不清除畫面）：回到前景、恢復網路或手動點狀態列時使用 */
 function subscribe(why){
   unsubs.forEach(u=>u());unsubs=[];
-  subWhy=why==='open'?'open':'resume';subFirst.clear();['points','rootStat','lines'].forEach(k=>subFirst.add(k));
+  subWhy=why==='open'?'open':'resume';subFirst.clear();['points','rootStat','lines','obs'].forEach(k=>subFirst.add(k));
   if(!cfgOk||!me||code.length<6){setStatus();return}
   const onErr=()=>{syncErr=true;setStatus();toast('無法讀取資料庫，請確認 Firestore 規則已貼上並發布')};
   unsubs.push(onSnapshot(colRef('points'),{includeMetadataChanges:true},snap=>{
@@ -1961,6 +2136,11 @@ function subscribe(why){
   unsubs.push(onSnapshot(colRef('rootStat'),snap=>{
     countSnap(snap,'rootStat');rstat.clear();
     snap.docs.forEach(d=>{const v=d.data();if(v&&(v.st||v.tie))rstat.set(d.id,v)});
+    draw();
+  },onErr));
+  unsubs.push(onSnapshot(colRef('obs'),snap=>{
+    countSnap(snap,'obs');obs.clear();
+    snap.docs.forEach(d=>{const v=d.data();if(v&&v.s&&v.t)obs.set(d.id,v)});
     draw();
   },onErr));
   unsubs.push(onSnapshot(colRef('lines'),snap=>{
