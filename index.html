@@ -565,7 +565,7 @@ const colRef=c=>collection(fs,'projects',code,c);
 const docRef=(c,id)=>doc(fs,'projects',code,c,id);
 
 /* ---------- map & layers ---------- */
-/* v30：通視線「看不過去」（no）與「待複查」（rv、rvWhy），線面板、通視編輯、圖根詳細頁、新增點位縮小版面。v29.4：自動更新到新版（checkUpdate／canReload／doReload，APP_VER 改字串，讀取表比自己版本舊就標「舊版」）。v29.3：施測進度只留設站完成（obsProg／obsProgHtml）。v29.2：設站完成的點改粗綠外環＋點號綠底白字（.pin.std）。v29.1：點標題只做變動同步，不再整份重讀。v29：讀取省量（subscribe／subKey，寫入 wSet／wUpd／wDel，upd 伺服器時間＋標記刪除）。v28：設站觀測（obs／enterStation／renderStation）、找點（startFind／findBan）、施測進度（obsProgHtml）、施測計畫表（buildPlanCsv）、詳細頁按鈕兩排。v27.1：工作進度圖根三段收合、姓名重複提醒（checkNameDup）、點位清單篩選（lf／lfOk）。v27：歷年圖根納入本次規劃（isTie）、匯出 CSV 連同加密點／圖根（buildCsv extra）、通視線方向與多餘觀測（lnDir／arrowMarker／renderLineSheet）。v26：定位追蹤開著時，新增點位十字直接移到最新位置（enterAdd）。v25：讀取計數見 useHtml／countSnap，重新訂閱門檻 1 分鐘。v24：點號避讓與縮小圈圈見 layoutLabels。v23：最大 zoom 21（底圖原生到 19，20、21 為放大顯示；自動縮放上限不變） */
+/* v30.1：通視線狀態移到施測進度下方、看不過去的叉叉拿掉圓圈改白描邊。v30：通視線「看不過去」（no）與「待複查」（rv、rvWhy），線面板、通視編輯、圖根詳細頁、新增點位縮小版面。v29.4：自動更新到新版（checkUpdate／canReload／doReload，APP_VER 改字串，讀取表比自己版本舊就標「舊版」）。v29.3：施測進度只留設站完成（obsProg／obsProgHtml）。v29.2：設站完成的點改粗綠外環＋點號綠底白字（.pin.std）。v29.1：點標題只做變動同步，不再整份重讀。v29：讀取省量（subscribe／subKey，寫入 wSet／wUpd／wDel，upd 伺服器時間＋標記刪除）。v28：設站觀測（obs／enterStation／renderStation）、找點（startFind／findBan）、施測進度（obsProgHtml）、施測計畫表（buildPlanCsv）、詳細頁按鈕兩排。v27.1：工作進度圖根三段收合、姓名重複提醒（checkNameDup）、點位清單篩選（lf／lfOk）。v27：歷年圖根納入本次規劃（isTie）、匯出 CSV 連同加密點／圖根（buildCsv extra）、通視線方向與多餘觀測（lnDir／arrowMarker／renderLineSheet）。v26：定位追蹤開著時，新增點位十字直接移到最新位置（enterAdd）。v25：讀取計數見 useHtml／countSnap，重新訂閱門檻 1 分鐘。v24：點號避讓與縮小圈圈見 layoutLabels。v23：最大 zoom 21（底圖原生到 19，20、21 為放大顯示；自動縮放上限不變） */
 const map=L.map('map',{zoomControl:false,center:[23.487,120.471],zoom:16,maxZoom:21});
 map.createPane('lnArrow');map.getPane('lnArrow').style.zIndex=450;map.getPane('lnArrow').style.pointerEvents='none';
 const wmts=k=>L.tileLayer('https://wmts.nlsc.gov.tw/wmts/'+k+'/default/GoogleMapsCompatible/{z}/{y}/{x}',{maxNativeZoom:19,maxZoom:21,attribution:'© 內政部國土測繪中心'});
@@ -840,7 +840,7 @@ function dropPoly(o){map.removeLayer(o.v);map.removeLayer(o.h);if(o.ar)map.remov
 /* v30：線中間的標記：看不過去＝紅✕，待複查＝黃「!」 */
 function midMarker(a,b,kind){
   const html=kind==='no'
-    ?'<svg width="26" height="26" viewBox="-13 -13 26 26" style="display:block"><circle r="10.5" fill="#fff" stroke="#e03131" stroke-width="2.2"/><path d="M-4.5 -4.5L4.5 4.5M4.5 -4.5L-4.5 4.5" stroke="#e03131" stroke-width="3" stroke-linecap="round"/></svg>'
+    ?'<svg width="26" height="26" viewBox="-13 -13 26 26" style="display:block"><path d="M-6.5 -6.5L6.5 6.5M6.5 -6.5L-6.5 6.5" stroke="#fff" stroke-width="7" stroke-linecap="round"/><path d="M-6.5 -6.5L6.5 6.5M6.5 -6.5L-6.5 6.5" stroke="#e03131" stroke-width="3.6" stroke-linecap="round"/></svg>'
     :'<svg width="26" height="26" viewBox="-13 -13 26 26" style="display:block"><circle r="10.5" fill="#fab005" stroke="#fff" stroke-width="2.2"/><path d="M0 -6V2" stroke="#17211c" stroke-width="3" stroke-linecap="round"/><circle cy="6" r="1.8" fill="#17211c"/></svg>';
   return L.marker([(a.lat+b.lat)/2,(a.lng+b.lng)/2],{pane:'lnArrow',interactive:false,keyboard:false,icon:L.divIcon({className:'ln-ar',html,iconSize:[26,26],iconAnchor:[13,13]})}).addTo(map);
 }
@@ -1527,7 +1527,7 @@ function renderProgress(){
     '<li><span class="nm">BI 開頭／HI 開頭</span><span class="d">'+pr.BI.count+' ／ '+pr.HI.count+'</span></li>'+
     '<li><span class="nm">鋼標</span><span class="d">'+pr.marks['鋼標']+'</span></li>'+
     mkRow('道釘','道釘',chips)+mkRow('其他','其他',noteChips)+mkRow('未設定','樁標未設定',chips)+'</ul></div>'+
-    todo('通視線為 0',pr.noLink)+todo('樁標為「其他」但沒填備註',pr.noNote)+lnStHtml()+obsProgHtml()+rootStHtml(chips)+useHtml());
+    todo('通視線為 0',pr.noLink)+todo('樁標為「其他」但沒填備註',pr.noNote)+obsProgHtml()+lnStHtml()+rootStHtml(chips)+useHtml());
   if(st0)sheet.scrollTop=st0;
 }
 /* 工作進度：展開中的樁標列（重新整理畫面時維持） */
@@ -2199,7 +2199,7 @@ function useHtml(){
    - 整份模式（這台裝置今天第一次、沒有同步時間）：一般監聽，讀全部，順便幫沒有 upd 的舊資料補時間。
    - 變動模式（其他時候，含點標題；v29.1 起點標題不再整份）：先用手機快取畫出來（不算讀取），再只監聽 upd 比上次同步晚的資料。
    同步時間存 localStorage cp_wm_<專案>_<集合>（伺服器時間 秒:奈秒），每日整份記在 cp_full_<專案>_<集合>。 */
-const APP_VER='30.0',SYNC_KEYS=['points','rootStat','lines','obs'];
+const APP_VER='30.1',SYNC_KEYS=['points','rootStat','lines','obs'];
 let forceFull=false,subGen=0;
 const mapOf=k=>k==='points'?points:k==='lines'?lines:k==='rootStat'?rstat:k==='obs'?obs:null;
 function applyDoc(k,id,v){
