@@ -514,6 +514,7 @@ const $=s=>document.querySelector(s);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const cfgOk=firebaseConfig.projectId&&firebaseConfig.projectId!=='REPLACE_ME';
 let me='',code='';
+const ss={get(k){try{return sessionStorage.getItem(k)||''}catch(e){return ''}},set(k,v){try{if(v)sessionStorage.setItem(k,v);else sessionStorage.removeItem(k)}catch(e){}}};
 const store={get(k){try{return localStorage.getItem(k)||''}catch(e){return ''}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
 me=store.get('cp_name');
 const cleanCode=s=>String(s||'').trim().replace(/[^A-Za-z0-9_-]/g,'');
@@ -530,7 +531,7 @@ async function resolveProject(pw){
   return p?{name:p.name,code:n,dir:p.dir||''}:null;
 }
 let curName='',curDir='',pendingPw=normPw(decodeURIComponent((location.hash||'').slice(1)));
-try{if(location.hash)history.replaceState(null,'',location.pathname)}catch(e){}
+try{if(location.hash||/[?&]upd=/.test(location.search))history.replaceState(null,'',location.pathname)}catch(e){} /* v29.4：自動更新重載時網址帶 ?upd=，載入後拿掉 */
 const projName=()=>curName;
 
 /* ---------- firebase ---------- */
@@ -543,7 +544,7 @@ const colRef=c=>collection(fs,'projects',code,c);
 const docRef=(c,id)=>doc(fs,'projects',code,c,id);
 
 /* ---------- map & layers ---------- */
-/* v29.3：施測進度只留設站完成（obsProg／obsProgHtml）。v29.2：設站完成的點改粗綠外環＋點號綠底白字（.pin.std）。v29.1：點標題只做變動同步，不再整份重讀。v29：讀取省量（subscribe／subKey，寫入 wSet／wUpd／wDel，upd 伺服器時間＋標記刪除）。v28：設站觀測（obs／enterStation／renderStation）、找點（startFind／findBan）、施測進度（obsProgHtml）、施測計畫表（buildPlanCsv）、詳細頁按鈕兩排。v27.1：工作進度圖根三段收合、姓名重複提醒（checkNameDup）、點位清單篩選（lf／lfOk）。v27：歷年圖根納入本次規劃（isTie）、匯出 CSV 連同加密點／圖根（buildCsv extra）、通視線方向與多餘觀測（lnDir／arrowMarker／renderLineSheet）。v26：定位追蹤開著時，新增點位十字直接移到最新位置（enterAdd）。v25：讀取計數見 useHtml／countSnap，重新訂閱門檻 1 分鐘。v24：點號避讓與縮小圈圈見 layoutLabels。v23：最大 zoom 21（底圖原生到 19，20、21 為放大顯示；自動縮放上限不變） */
+/* v29.4：自動更新到新版（checkUpdate／canReload／doReload，APP_VER 改字串，讀取表比自己版本舊就標「舊版」）。v29.3：施測進度只留設站完成（obsProg／obsProgHtml）。v29.2：設站完成的點改粗綠外環＋點號綠底白字（.pin.std）。v29.1：點標題只做變動同步，不再整份重讀。v29：讀取省量（subscribe／subKey，寫入 wSet／wUpd／wDel，upd 伺服器時間＋標記刪除）。v28：設站觀測（obs／enterStation／renderStation）、找點（startFind／findBan）、施測進度（obsProgHtml）、施測計畫表（buildPlanCsv）、詳細頁按鈕兩排。v27.1：工作進度圖根三段收合、姓名重複提醒（checkNameDup）、點位清單篩選（lf／lfOk）。v27：歷年圖根納入本次規劃（isTie）、匯出 CSV 連同加密點／圖根（buildCsv extra）、通視線方向與多餘觀測（lnDir／arrowMarker／renderLineSheet）。v26：定位追蹤開著時，新增點位十字直接移到最新位置（enterAdd）。v25：讀取計數見 useHtml／countSnap，重新訂閱門檻 1 分鐘。v24：點號避讓與縮小圈圈見 layoutLabels。v23：最大 zoom 21（底圖原生到 19，20、21 為放大顯示；自動縮放上限不變） */
 const map=L.map('map',{zoomControl:false,center:[23.487,120.471],zoom:16,maxZoom:21});
 map.createPane('lnArrow');map.getPane('lnArrow').style.zIndex=450;map.getPane('lnArrow').style.pointerEvents='none';
 const wmts=k=>L.tileLayer('https://wmts.nlsc.gov.tw/wmts/'+k+'/default/GoogleMapsCompatible/{z}/{y}/{x}',{maxNativeZoom:19,maxZoom:21,attribution:'© 內政部國土測繪中心'});
@@ -2121,7 +2122,7 @@ function useHtml(){
   if(!useRows)return head+'<div class="hint">讀取中…</div></div>';
   const u=useCur(),by=new Map();
   useRows.filter(r=>r&&r.day===u.day&&r.dev!==devId).concat([{name:me,dev:devId,ver:APP_VER,open:u.open,resume:u.resume,edit:u.edit}]).forEach(r=>{
-    const k=String(r.name||'?');const o=by.get(k)||{open:0,resume:0,edit:0,devs:new Set(),old:false};if(!(+r.ver>=29))o.old=true;
+    const k=String(r.name||'?');const o=by.get(k)||{open:0,resume:0,edit:0,devs:new Set(),old:false};if(verLt(r.ver,APP_VER))o.old=true;
     o.open+=+r.open||0;o.resume+=+r.resume||0;o.edit+=+r.edit||0;if(r.dev)o.devs.add(r.dev);by.set(k,o)});
   const rows=[...by.entries()].map(([n,o])=>({n,o,t:o.open+o.resume+o.edit})).filter(r=>r.t>0||r.n===me).sort((a,b)=>b.t-a.t);
   const tot=rows.reduce((a,r)=>a+r.t,0),f=n=>n.toLocaleString();
@@ -2135,7 +2136,7 @@ function useHtml(){
    - 整份模式（這台裝置今天第一次、沒有同步時間）：一般監聽，讀全部，順便幫沒有 upd 的舊資料補時間。
    - 變動模式（其他時候，含點標題；v29.1 起點標題不再整份）：先用手機快取畫出來（不算讀取），再只監聽 upd 比上次同步晚的資料。
    同步時間存 localStorage cp_wm_<專案>_<集合>（伺服器時間 秒:奈秒），每日整份記在 cp_full_<專案>_<集合>。 */
-const APP_VER=29,SYNC_KEYS=['points','rootStat','lines','obs'];
+const APP_VER='29.4',SYNC_KEYS=['points','rootStat','lines','obs'];
 let forceFull=false,subGen=0;
 const mapOf=k=>k==='points'?points:k==='lines'?lines:k==='rootStat'?rstat:k==='obs'?obs:null;
 function applyDoc(k,id,v){
@@ -2207,11 +2208,14 @@ async function subKey(k,gen,full0,onErr){
   },onErr));
 }
 let hiddenAt=0;
+const UPD_GAP=30*60000; /* v29.4：背景超過 30 分鐘回前景才檢查新版 */
 /* v25：背景超過 1 分鐘才重新訂閱（原 15 秒；短暫切走交給 Firebase 自己重連，省讀取） */
-document.addEventListener('visibilitychange',()=>{if(document.hidden){hiddenAt=Date.now();useUpload(false)}else if(code&&me&&Date.now()-hiddenAt>60000)subscribe('resume')});
+document.addEventListener('visibilitychange',()=>{if(document.hidden){hiddenAt=Date.now();useUpload(false)}else{if(Date.now()-hiddenAt>UPD_GAP)checkUpdate();if(code&&me&&Date.now()-hiddenAt>60000)subscribe('resume')}});
 addEventListener('online',()=>{if(code&&me)subscribe('resume')});
-addEventListener('pageshow',e=>{if(e.persisted&&code&&me)subscribe('resume')});
+addEventListener('pageshow',e=>{if(e.persisted){if(Date.now()-updAt>UPD_GAP)checkUpdate();if(code&&me)subscribe('resume')}});
 document.querySelector('.brand').addEventListener('click',()=>{if(!code||!me)return;subscribe('resume');toast('已重新同步')});
+/* v29.4：自動更新重載前記下的地圖位置，載入後回到原處（不再自動縮放到全部點位） */
+const viewKept=(()=>{try{const v=JSON.parse(ss.get('cp_view')||'null');ss.set('cp_view','');if(v&&isFinite(v.lat)&&isFinite(v.lng)&&isFinite(v.z)){map.setView([v.lat,v.lng],v.z);fitted=true;return true}}catch(e){}return false})();
 setWho();
 setStatus();
 (async()=>{
@@ -2220,10 +2224,42 @@ setStatus();
   setStatus();
   if(!cfgOk)showInfo('尚未設定資料庫','<p class="hint">網頁裡的 Firebase 設定還沒填入。完成設定後，這個畫面就會消失。</p>');
   else if(!me||!code)askLogin();
-  else startSync();
+  else{startSync();if(viewKept)fitted=true}
+  if(ss.get('cp_upd_try')===APP_VER){ss.set('cp_upd_try','');toast('已更新到 v'+APP_VER)}
 })();
 /* PWA（v22）：註冊 service worker，離線快取網頁、KML、函式庫與看過的底圖（見 sw.js）。本機檔案或測試環境不註冊 */
 if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{})});
+/* v29.4：自動更新到新版。開網頁、回前景（背景超過 30 分鐘）時，抓伺服器上的 index.html（不走快取）比對 APP_VER。
+   有新版就等到「沒在操作」（沒開任何視窗、沒在輸入、登入畫面沒打密碼、沒在新增／移動／設站／找點／定位追蹤、沒有寫入中）才自動重新載入，
+   重新載入前記下地圖位置。同一版本這次開啟只自動重載一次，避免拿到舊快取時一直重載。
+   注意：之後改版請維持 const APP_VER='xx.x' 這種寫法，舊版網頁是用它比對的。 */
+function verLt(a,b){const x=String(a||0).split('.').map(Number),y=String(b||0).split('.').map(Number);for(let i=0;i<Math.max(x.length,y.length);i++){const d=(x[i]||0)-(y[i]||0);if(d)return d<0}return false}
+let updVer='',updTimer=null,updAt=0;
+async function checkUpdate(){
+  if(location.protocol!=='https:'||updVer)return;
+  updAt=Date.now();
+  try{
+    const r=await fetch(location.pathname+'?vchk='+Date.now(),{cache:'no-store'});
+    if(!r.ok)return;
+    const m=(await r.text()).match(/const APP_VER='([\d.]+)'/);
+    if(!m||!verLt(APP_VER,m[1])||ss.get('cp_upd_try')===m[1])return;
+    updVer=m[1];
+    try{const g=await navigator.serviceWorker.getRegistration();if(g)await g.update()}catch(e){}
+    updTimer=setInterval(()=>{if(canReload())doReload()},3000);
+  }catch(e){}
+}
+function canReload(){
+  const a=document.activeElement;
+  return !document.hidden&&!busy&&!pending&&mode==='idle'&&!pendMove&&!trk&&sheet.hidden&&
+    ($('#login').hidden||!$('#pwIn').value)&&$('#info').hidden&&$('#findBan').hidden&&!(a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName));
+}
+function doReload(){
+  clearInterval(updTimer);
+  ss.set('cp_upd_try',updVer);
+  try{const c=map.getCenter();ss.set('cp_view',JSON.stringify({lat:c.lat,lng:c.lng,z:map.getZoom()}))}catch(e){}
+  location.replace(location.pathname+'?upd='+Date.now());
+}
+setTimeout(checkUpdate,3000);
 </script>
 </body>
 </html>

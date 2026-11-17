@@ -1,10 +1,10 @@
 /* 控制點選點 service worker（PWA 離線快取）
-   - 網頁（index.html）與 KML：先抓網路（最多等 NET_WAIT 毫秒），失敗或逾時才用快取 → 上傳新版後重新整理就會更新
+   - 網頁（index.html）與 KML：先抓網路（v6 起網頁會向伺服器確認是否有新版，不吃瀏覽器快取）（最多等 NET_WAIT 毫秒），失敗或逾時才用快取 → 上傳新版後重新整理就會更新
    - Leaflet、Firebase SDK、字型、圖示：版本固定，先用快取
    - NLSC 底圖圖磚：看過才存，全部圖層合計有張數上限，超過刪最舊的
    - Firestore 連線不經過這裡（由 Firebase 自己的離線快取處理）
    改了這個檔才需要把 VER 加一；只改 index.html 不用動。 */
-const VER='v5';  // v5：地籍瀏覽器搬到自己的 repo，拿掉 viewer 檔案；v4：viewer-manifest 範圍改 ./viewer（Android 才不會開成選點 App）；v3：地籍瀏覽器換圖示與名稱（圖示、manifest 是先用快取）
+const VER='v6';  // v6：網頁一律向伺服器確認（不用瀏覽器 10 分鐘快取），網址帶 ?upd= 時（App 自動更新重載）等網路不逾時；v5：地籍瀏覽器搬到自己的 repo，拿掉 viewer 檔案；v4：viewer-manifest 範圍改 ./viewer（Android 才不會開成選點 App）；v3：地籍瀏覽器換圖示與名稱（圖示、manifest 是先用快取）
 const SHELL='cp-shell-'+VER, LIB='cp-lib-'+VER, TILE='cp-tile';
 const NET_WAIT=4000;
 const TILE_MAX_CORS=2000, TILE_MAX_OPAQUE=300; /* 沒有 CORS 的圖磚（opaque）佔配額很大，上限放小 */
@@ -47,7 +47,10 @@ self.addEventListener('fetch',e=>{
   const req=e.request;
   if(req.method!=='GET')return;
   const u=new URL(req.url);
-  if(req.mode==='navigate'&&req.url.startsWith(SCOPE)){e.respondWith(netFirst(req,pageKey(u)));return}
+  if(req.mode==='navigate'&&req.url.startsWith(SCOPE)){
+    /* v6：cache:'no-cache' 每次向伺服器確認（沒變只回 304，很省）；redirect:'manual' 讓 /Survey → /Survey/ 這類轉址照常運作 */
+    const nr=new Request(req.url,{cache:'no-cache',redirect:'manual',credentials:'same-origin'});
+    e.respondWith(netFirst(nr,pageKey(u),u.searchParams.has('upd')));return}
   if(u.origin===location.origin){
     if(!req.url.startsWith(SCOPE))return; /* 同網域其他 repo（地籍瀏覽器）不歸這裡管 */
     if(u.pathname.endsWith('/sw.js'))return;
@@ -60,9 +63,10 @@ self.addEventListener('fetch',e=>{
 });
 
 /* 先網路：成功就更新快取；失敗或超過 NET_WAIT 才回快取（之後網路回來仍會更新快取） */
-async function netFirst(req,key){
+async function netFirst(req,key,noWait){
   const c=await caches.open(SHELL);
   const net=fetch(req).then(r=>{if(r.ok)c.put(key,r.clone());return r});
+  if(noWait){try{return await net}catch(err){const hit=await c.match(key);if(hit)return hit;throw err}} /* 自動更新重載：等網路，斷網才用快取 */
   let timer;
   const wait=new Promise(res=>{timer=setTimeout(res,NET_WAIT)});
   try{
